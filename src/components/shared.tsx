@@ -99,11 +99,14 @@ export function Action({
 export function AgentAvatar({ agent, size = 22 }: { agent?: Agent; size?: number }) {
   return (
     <Avatar
+      src={agent ? `/providers/${agent.provider}.svg` : undefined}
+      alt={agent ? `${agent.cli}头像` : undefined}
       sx={{
         width: size,
         height: size,
-        bgcolor: agent?.color ?? '#0866ff',
+        bgcolor: agent ? 'transparent' : '#0866ff',
         fontSize: size < 20 ? 10 : 12,
+        '& img': { objectFit: 'contain', padding: '2px' },
       }}
     >
       {agent?.name[0] ?? 'H'}

@@ -1,5 +1,6 @@
 import type { AppData, ChatScope, Project, Requirement, Task, TaskStatus } from '../types'
 import { seed } from './seed'
+import { agentConfigService } from './agentConfigService'
 
 // Replace this adapter with HTTP/WebSocket calls when a backend is available.
 let data: AppData = structuredClone(seed)
@@ -112,21 +113,34 @@ export const reinService = {
     publish()
     return structuredClone(project)
   },
-  async createRequirement(projectId: string, input: { name: string; description: string }) {
+  async saveRequirement(
+    projectId: string,
+    input: { id?: string; name: string; description: string },
+  ) {
     const project = data.projects.find((p) => p.id === projectId)
     if (!project) throw new Error('请选择所属项目。')
     const title = input.name.trim()
     if (!title) throw new Error('请输入需求名称。')
-    if (data.requirements.some((r) => r.projectId === projectId && r.title === title))
+    if (
+      data.requirements.some(
+        (r) => r.projectId === projectId && r.id !== input.id && r.title === title,
+      )
+    )
       throw new Error('此项目已有同名需求。')
+    if (input.id && !data.requirements.some((r) => r.id === input.id && r.projectId === projectId))
+      throw new Error('需求不存在，请重新选择。')
     const requirement: Requirement = {
-      id: crypto.randomUUID(),
+      id: input.id ?? crypto.randomUUID(),
       title,
       description: input.description.trim(),
       projectId,
     }
-    data.requirements.push(requirement)
-    project.requirementIds.push(requirement.id)
+    if (input.id)
+      data.requirements = data.requirements.map((r) => (r.id === input.id ? requirement : r))
+    else {
+      data.requirements.push(requirement)
+      project.requirementIds.push(requirement.id)
+    }
     publish()
     return structuredClone(requirement)
   },
@@ -134,6 +148,7 @@ export const reinService = {
     return JSON.stringify({ mode: 'mock', ...data }, null, 2)
   },
   async reset() {
+    agentConfigService.reset()
     data = structuredClone(seed)
     publish()
   },

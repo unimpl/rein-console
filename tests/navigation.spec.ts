@@ -78,7 +78,7 @@ test('project create/edit and requirement creation update the shared navigation 
   await expect(page.getByRole('heading', { name: '工单查询', exact: true })).toBeVisible()
   const requirement = page.locator('.requirement-row').filter({ hasText: '工单查询' })
   await expect(requirement.locator('.project-children')).toHaveCount(0)
-  await requirement.getByRole('button', { name: '从工单查询新建需求' }).click()
+  await page.getByRole('button', { name: '在客户服务门户中新建需求', exact: true }).click()
   await page.getByRole('textbox', { name: '需求名称' }).fill('工单查询')
   await page.getByRole('dialog').getByRole('button', { name: '创建', exact: true }).click()
   await expect(page.getByRole('dialog').getByRole('alert')).toContainText('已有同名需求')

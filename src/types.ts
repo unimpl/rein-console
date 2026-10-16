@@ -25,6 +25,36 @@ export interface Agent {
   color: string
   online: boolean
   cli: string
+  provider: 'claude' | 'codex' | 'pi'
+}
+export interface AgentConfiguration {
+  a2a: {
+    endpoint: string
+    cardPath: string
+    transport: 'JSON-RPC' | 'HTTP+JSON'
+    timeout: number
+    streaming: boolean
+  }
+  local: {
+    executable: string
+    workingDirectory: string
+    model: string
+    approval: '每次确认' | '工作空间写入' | '只读'
+    timeout: number
+  }
+  skills: {
+    directories: string
+    enabled: string
+    autoDiscover: boolean
+    allowCommands: boolean
+  }
+  memory: {
+    backend: '本地文件' | 'SQLite' | 'Chroma'
+    directory: string
+    namespace: string
+    retentionDays: number
+    autoSave: boolean
+  }
 }
 export interface Task {
   id: string

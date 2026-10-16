@@ -21,7 +21,7 @@ const categories = [
   { name: '通知', icon: 'notify', description: '选择希望收到提醒的任务事件。' },
   { name: '数据与隐私', icon: 'shield', description: '管理本机记录与工作空间记忆。' },
 ]
-function Row({
+export function Row({
   label,
   description,
   children,

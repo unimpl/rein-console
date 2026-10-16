@@ -64,10 +64,7 @@ export function Chat({ data, scope, onTask, onMembers, notify, sendMode, userNam
           </div>
         )}
         {!selectedAgent && <Action label="查看群聊成员" icon="plus" onClick={onMembers} />}
-        <Action
-          label="聊天范围说明"
-          onClick={() => notify(`当前聊天范围：${scope.title}。消息仅发送到此范围。`)}
-        />
+        <Action label="聊天设置" icon="settings" onClick={() => notify('聊天设置功能待确定。')} />
       </header>
       <div
         className="messages"

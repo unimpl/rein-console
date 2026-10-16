@@ -8,13 +8,14 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material'
-import type { Project } from '../types'
+import type { Project, Requirement } from '../types'
 import { reinService } from '../services/reinService'
 import { Action } from './shared'
 
 export interface EntityEditor {
   kind: 'project' | 'requirement'
   project?: Project
+  requirement?: Requirement
   projectId?: string
 }
 export function EntityDialog({
@@ -31,13 +32,16 @@ export function EntityDialog({
     name: string
   }) => void
 }) {
-  const [name, setName] = useState(editor.project?.name ?? '')
-  const [description, setDescription] = useState(editor.project?.description ?? '')
+  const [name, setName] = useState(editor.project?.name ?? editor.requirement?.title ?? '')
+  const [description, setDescription] = useState(
+    editor.project?.description ?? editor.requirement?.description ?? '',
+  )
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const fieldId = useId()
   const project = editor.kind === 'project'
-  const title = project ? (editor.project ? '编辑项目' : '新建项目') : '新建需求'
+  const editing = !!(editor.project || editor.requirement)
+  const title = `${editing ? '编辑' : '新建'}${project ? '项目' : '需求'}`
   return (
     <Dialog
       open
@@ -61,7 +65,8 @@ export function EntityDialog({
               })
               onSaved({ kind: 'project', id: result.id, projectId: result.id, name: result.name })
             } else {
-              const result = await reinService.createRequirement(editor.projectId!, {
+              const result = await reinService.saveRequirement(editor.projectId!, {
+                id: editor.requirement?.id,
                 name,
                 description,
               })
@@ -117,7 +122,7 @@ export function EntityDialog({
             取消
           </Button>
           <Button type="submit" variant="contained" disabled={saving || !name.trim()}>
-            {saving ? '正在保存…' : editor.project ? '保存' : '创建'}
+            {saving ? '正在保存…' : editing ? '保存' : '创建'}
           </Button>
         </DialogActions>
       </form>

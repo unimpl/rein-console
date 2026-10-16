@@ -137,12 +137,19 @@ test('narrow windows keep task controls, navigation, drawer and configuration ac
           elements.map((el) => {
             const box = el.getBoundingClientRect()
             const lastCard = el.querySelector('.task-card:last-child')?.getBoundingClientRect()
-            return { top: box.top, bottom: box.bottom, lastCardBottom: lastCard?.bottom ?? box.top }
+            return {
+              top: box.top,
+              bottom: box.bottom,
+              left: box.left,
+              right: box.right,
+              lastCardBottom: lastCard?.bottom ?? box.top,
+            }
           }),
         )
         return groups.every(
           (group, i) =>
-            group.bottom >= group.lastCardBottom && (i === 0 || group.top >= groups[i - 1].bottom),
+            group.bottom >= group.lastCardBottom &&
+            (i === 0 || group.top >= groups[i - 1].bottom || group.left >= groups[i - 1].right),
         )
       })
       .toBe(true)

@@ -13,8 +13,18 @@ interface Props {
   onFlow: () => void
   onCreate: (status: TaskStatus) => void
   onStatus: (task: Task, status: TaskStatus) => void
+  notify: (message: string) => void
 }
-export function TaskPanel({ data, scope, selectedId, onTask, onFlow, onCreate, onStatus }: Props) {
+export function TaskPanel({
+  data,
+  scope,
+  selectedId,
+  onTask,
+  onFlow,
+  onCreate,
+  onStatus,
+  notify,
+}: Props) {
   const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null)
   const [filter, setFilter] = useState('all')
   const [taskMenu, setTaskMenu] = useState<{ el: HTMLElement; task: Task } | null>(null)
@@ -37,7 +47,11 @@ export function TaskPanel({ data, scope, selectedId, onTask, onFlow, onCreate, o
           className={filter !== 'all' ? 'active-action' : ''}
           onClick={(e) => setFilterAnchor(e.currentTarget)}
         />
-        <Action label="新建任务" onClick={() => onCreate('todo')} />
+        <Action
+          label="任务栏设置"
+          icon="settings"
+          onClick={() => notify('任务栏设置功能待确定。')}
+        />
       </header>
       <div className="task-groups">
         {(Object.keys(statusLabels) as TaskStatus[]).map((status) => (

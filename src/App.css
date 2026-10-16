@@ -158,10 +158,14 @@ textarea {
 }
 .sidebar-scroll {
   min-height: 0;
-  overflow: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding-top: 8px;
 }
 .sidebar-search {
+  flex: none;
   height: 32px;
   background: #f3f4f6;
   gap: 6px;
@@ -179,6 +183,36 @@ textarea {
   flex-direction: column;
   gap: 8px;
   padding-top: 8px;
+  min-height: 0;
+  flex: 0 1 auto;
+}
+.navigation > .MuiListItemButton-root,
+.navigation > .nav-divider {
+  flex: none;
+}
+.project-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 64px;
+  max-height: 384px;
+  flex: 0 1 auto;
+}
+.project-section > .nav-label {
+  flex: none;
+}
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  max-height: 352px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+.project-list > * {
+  flex: none;
 }
 .navigation .nav-divider {
   margin: 16px 0 8px;
@@ -228,6 +262,7 @@ textarea {
   background: #08a56d;
 }
 .agent-roster {
+  flex: none;
   margin-top: 8px;
   display: flex;
   flex-direction: column;
@@ -1647,19 +1682,24 @@ textarea {
   transform: none;
 }
 .project-edit,
-.requirement-add {
+.requirement-edit,
+.agent-settings-action {
   position: absolute !important;
   right: 3px;
   top: 3px;
 }
-.project-edit {
+.project-edit,
+.requirement-edit {
   opacity: 0;
 }
 .project-row:hover .project-edit,
-.project-row:focus-within .project-edit {
+.project-row:focus-within .project-edit,
+.requirement-row:hover .requirement-edit,
+.requirement-row:focus-within .requirement-edit {
   opacity: 0.6;
 }
-.project-row .project-edit:focus-visible {
+.project-row .project-edit:focus-visible,
+.requirement-row .requirement-edit:focus-visible {
   opacity: 1;
 }
 .project-children {
@@ -1763,7 +1803,7 @@ textarea {
 .entity-field .MuiOutlinedInput-root {
   min-height: 36px;
 }
-.entity-field .MuiOutlinedInput-multiline {
+.entity-field .MuiInputBase-multiline {
   min-height: 88px;
   padding: 10px;
   align-items: flex-start;
@@ -1843,7 +1883,8 @@ textarea {
   }
 }
 @media (hover: none) {
-  .project-edit {
+  .project-edit,
+  .requirement-edit {
     opacity: 0.5;
   }
 }
@@ -1872,4 +1913,24 @@ textarea {
 }
 .sidebar-rail nav {
   gap: 16px;
+}
+.agent-roster-row {
+  position: relative;
+  min-width: 0;
+}
+.agent-roster-row > .MuiListItemButton-root {
+  width: 100%;
+  padding-right: 36px;
+}
+.agent-config-dialog .setting-control {
+  width: 252px;
+  max-width: 100%;
+}
+.agent-config-error {
+  margin-bottom: 8px;
+}
+@media (max-width: 560px) {
+  .agent-config-dialog .setting-control {
+    width: 100%;
+  }
 }

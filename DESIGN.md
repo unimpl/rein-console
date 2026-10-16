@@ -228,6 +228,8 @@ Outlined fields use the divider stroke, label typography, the control radius and
 
 Sidebar rows have a minimum height of (32px), (5px 8px) padding and (8px) icon gaps. Selection uses pale blue with primary ink. Project rows toggle their tree, with project chat first and leaf requirements below. Project editing appears on hover or keyboard focus. Show five projects initially, then three more per click. Collapsed navigation leaves a (56px) rail with restore and workspace/project/requirement shortcuts; the avatar stays at the bottom. Agent roster rows open direct conversations and replace Todo with Memory. Do not add Agent management or task-status children to this navigation. Settings categories use taller (36px) rows and muted gray selection. Account actions appear in a (264px) menu with (6px) paper padding; its dismiss backdrop stays transparent.
 
+Requirements expose the same hover/focus edit affordance as projects; creation remains on the requirements heading. The project section is bounded at (384px), with a (352px) scrollable list beneath its heading; it shrinks on short windows. Search, workspace chat, Agent roster and the pinned account do not share that scroll. Collapsing navigation preserves the chat track width and gives the released (240px) to Todo or Memory. Use Claude, Codex and pi provider SVGs consistently for Alex, Sam and Robin. Each Agent row has a quiet monochrome settings gear. Chat and Todo toolbar gears have explicit pending-function feedback.
+
 ### Cards / Containers
 
 Task cards are white, outlined and rounded with (10px) padding and a minimum height of (132px). IDs and action menus occupy a small metadata row above the task title, assignee and execution state. Hover changes the border to `#a9b8d2`; selection uses the primary border and selection halo. Cards sit on pale gray task-group containers with (10px) card gaps. At narrow task-container widths, group heights follow content rather than distributing a fixed viewport height.
@@ -237,6 +239,8 @@ Task cards are white, outlined and rounded with (10px) padding and a minimum hei
 Messages pair avatars with author and time metadata. Agent bubbles use muted gray; the user's bubbles use selected pale blue and align to the right. Bubbles use body typography, the container radius and (9px 12px) padding. Long text wraps without widening the pane. Inline task assignments form bordered rows (48px) high, with task actions opening the same detail view as task cards.
 
 The composer has no scope chip. Agent conversations use the same composer and show an illustrative, editable-vector Memory graph in the adjacent pane. Keep the planning note visible; Memory has no implemented storage or execution behavior. Project and requirement dialogs share a compact (440px × 380px) form with external labels, name and description fields, and cancel/save actions. Retain Material UI and the existing ChatGPT UI Kit reference patterns.
+
+Agent settings reuse the (1040px × 720px) configuration dialog and row structure, with A2A, local, SKILL and memory-storage categories. Fields commit on blur; selects and switches commit immediately. Show validation inline and keep closing available. Configuration is per Agent and memory-only; the footer states this limit. On narrow screens the category bar scrolls horizontally and reveals the selected category, while the form scrolls vertically.
 
 ### Terminal and task detail
 

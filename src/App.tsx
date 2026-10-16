@@ -16,7 +16,7 @@ import {
   TextField,
   useMediaQuery,
 } from '@mui/material'
-import type { AppData, ChatScope, Project, Task, TaskStatus } from './types'
+import type { Agent, AppData, ChatScope, Project, Requirement, Task, TaskStatus } from './types'
 import { defaultScope, reinService } from './services/reinService'
 import { preferencesService } from './services/preferences'
 import { Sidebar, SidebarRail } from './components/Sidebar'
@@ -27,6 +27,7 @@ import { Chat } from './components/Chat'
 import { TaskPanel } from './components/TaskPanel'
 import { TaskDetails } from './components/TaskDetails'
 import { Settings } from './components/Settings'
+import { AgentSettings } from './components/AgentSettings'
 import { Login } from './components/Login'
 import { Action, AgentAvatar, Icon } from './components/shared'
 import { statusLabels } from './constants'
@@ -52,6 +53,7 @@ export default function App() {
   const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null)
   const [workspaceAnchor, setWorkspaceAnchor] = useState<HTMLElement | null>(null)
   const [settings, setSettings] = useState(false)
+  const [configuredAgent, setConfiguredAgent] = useState<Agent | null>(null)
   const [logout, setLogout] = useState(false)
   const [loggedIn, setLoggedIn] = useState(true)
   const [preferences, setPreferences] = useState(preferencesService.load)
@@ -66,7 +68,17 @@ export default function App() {
   const [lastTaskId, setLastTaskId] = useState('T-24')
   const compact = useMediaQuery('(max-width: 1199px)')
   const mobile = useMediaQuery('(max-width: 899px)')
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth)
+  // Normalize against the expanded sidebar so collapsing it gives all released space to Todo.
+  const referenceWidth = Math.max(1, viewportWidth - 296 - 1)
+  const workspaceWidth = viewportWidth - (!compact && sidebarVisible ? 296 : 56) - 1
+  const chatWidth = Math.max(360, Math.min(workspaceWidth - 360, split * referenceWidth))
   const splitValueRef = useRef(split)
+  useEffect(() => {
+    const resize = () => setViewportWidth(window.innerWidth)
+    window.addEventListener('resize', resize)
+    return () => window.removeEventListener('resize', resize)
+  }, [])
   useEffect(() => {
     void reinService.getData().then(setData)
     return reinService.subscribe(setData)
@@ -127,10 +139,7 @@ export default function App() {
   function adjustSplit(clientX: number) {
     const rect = splitRef.current?.getBoundingClientRect()
     if (!rect) return
-    const next = Math.max(
-      360 / (rect.width - 1),
-      Math.min(1 - 360 / (rect.width - 1), (clientX - rect.left) / (rect.width - 1)),
-    )
+    const next = Math.max(360, Math.min(rect.width - 1 - 360, clientX - rect.left)) / referenceWidth
     setSplit(next)
     splitValueRef.current = next
   }
@@ -147,7 +156,9 @@ export default function App() {
     <Snackbar
       open={!!notice}
       autoHideDuration={3500}
-      onClose={() => setNotice('')}
+      onClose={(_, reason) => {
+        if (reason !== 'clickaway') setNotice('')
+      }}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
     >
       <Alert severity="info" onClose={() => setNotice('')} sx={{ fontSize: 12 }}>
@@ -186,7 +197,9 @@ export default function App() {
     onWorkspace: setWorkspaceAnchor,
     userName,
     onProject: (project?: Project) => setEntityEditor({ kind: 'project', project }),
-    onRequirement: (projectId: string) => setEntityEditor({ kind: 'requirement', projectId }),
+    onRequirement: (projectId: string, requirement?: Requirement) =>
+      setEntityEditor({ kind: 'requirement', projectId, requirement }),
+    onAgentSettings: (agent: Agent) => setConfiguredAgent(agent),
   }
   const selectedAgent = data.agents.find((agent) => agent.id === scope.agentId)
   const sidebar = <Sidebar {...sidebarProps} />
@@ -235,10 +248,7 @@ export default function App() {
           className={`split-layout ${mobile ? `mobile-show-${mobilePanel}` : ''}`}
           ref={splitRef}
           style={{
-            gridTemplateColumns: mobile
-              ? undefined
-              : // Keep flexible weights above 1 even after either minimum freezes a track.
-                `minmax(360px, ${split * 100}fr) 1px minmax(360px, ${(1 - split) * 100}fr)`,
+            gridTemplateColumns: mobile ? undefined : `${chatWidth}px 1px minmax(360px, 1fr)`,
           }}
         >
           <Chat
@@ -257,15 +267,13 @@ export default function App() {
             aria-orientation="vertical"
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuenow={Math.round(split * 100)}
+            aria-valuenow={Math.round((chatWidth / workspaceWidth) * 100)}
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 e.preventDefault()
                 const rect = splitRef.current!.getBoundingClientRect()
-                adjustSplit(
-                  rect.left + (split + (e.key === 'ArrowRight' ? 0.02 : -0.02)) * (rect.width - 1),
-                )
+                adjustSplit(rect.left + chatWidth + (e.key === 'ArrowRight' ? 24 : -24))
                 preferencesService.setSplit(splitValueRef.current)
               }
             }}
@@ -303,6 +311,7 @@ export default function App() {
                 setTaskTitle('')
               }}
               onStatus={changeTaskStatus}
+              notify={notify}
             />
           )}
         </div>
@@ -551,13 +560,13 @@ export default function App() {
       </Dialog>
       {entityEditor && (
         <EntityDialog
-          key={`${entityEditor.kind}-${entityEditor.project?.id ?? entityEditor.projectId ?? 'new'}`}
+          key={`${entityEditor.kind}-${entityEditor.project?.id ?? entityEditor.requirement?.id ?? entityEditor.projectId ?? 'new'}`}
           editor={entityEditor}
           onClose={() => setEntityEditor(null)}
           onSaved={(result) => {
-            const editing = !!entityEditor.project
+            const editing = !!(entityEditor.project || entityEditor.requirement)
             setEntityEditor(null)
-            if (result.kind === 'requirement')
+            if (result.kind === 'requirement' && (!editing || scope.id === result.id))
               changeScope({
                 id: result.id,
                 title: result.name,
@@ -565,15 +574,22 @@ export default function App() {
                 projectId: result.projectId,
                 requirementId: result.id,
               })
-            else if (!editing || scope.id === `project-${result.id}`)
+            else if (result.kind === 'project' && (!editing || scope.id === `project-${result.id}`))
               changeScope({
                 id: `project-${result.id}`,
                 title: result.name,
                 label: '当前项目',
                 projectId: result.id,
               })
-            notify(editing ? '项目已更新' : result.kind === 'project' ? '项目已创建' : '需求已创建')
+            notify(`${result.kind === 'project' ? '项目' : '需求'}已${editing ? '更新' : '创建'}`)
           }}
+        />
+      )}
+      {configuredAgent && (
+        <AgentSettings
+          key={configuredAgent.id}
+          agent={configuredAgent}
+          onClose={() => setConfiguredAgent(null)}
         />
       )}
       {snackbar}
