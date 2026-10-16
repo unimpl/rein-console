@@ -16,10 +16,13 @@ import {
   TextField,
   useMediaQuery,
 } from '@mui/material'
-import type { AppData, ChatScope, Task, TaskStatus } from './types'
+import type { AppData, ChatScope, Project, Task, TaskStatus } from './types'
 import { defaultScope, reinService } from './services/reinService'
 import { preferencesService } from './services/preferences'
-import { Sidebar } from './components/Sidebar'
+import { Sidebar, SidebarRail } from './components/Sidebar'
+import { EntityDialog } from './components/EntityDialog'
+import type { EntityEditor } from './components/EntityDialog'
+import { MemoryPanel } from './components/MemoryPanel'
 import { Chat } from './components/Chat'
 import { TaskPanel } from './components/TaskPanel'
 import { TaskDetails } from './components/TaskDetails'
@@ -32,6 +35,11 @@ import './App.css'
 export default function App() {
   const [data, setData] = useState<AppData | null>(null)
   const [scope, setScope] = useState<ChatScope>(defaultScope)
+  const [currentProjectId, setCurrentProjectId] = useState(defaultScope.projectId!)
+  const [currentRequirementId, setCurrentRequirementId] = useState<string | undefined>(
+    defaultScope.requirementId,
+  )
+  const [entityEditor, setEntityEditor] = useState<EntityEditor | null>(null)
   const [sidebarVisible, setSidebarVisible] = useState(preferencesService.sidebar)
   const [mobileNav, setMobileNav] = useState(false)
   const [mobilePanel, setMobilePanel] = useState<'chat' | 'tasks'>('chat')
@@ -48,7 +56,7 @@ export default function App() {
   const [loggedIn, setLoggedIn] = useState(true)
   const [preferences, setPreferences] = useState(preferencesService.load)
   const [notice, setNotice] = useState('')
-  const [info, setInfo] = useState<'agents' | 'flow' | 'help' | 'profile' | 'members' | null>(null)
+  const [info, setInfo] = useState<'flow' | 'help' | 'profile' | 'members' | null>(null)
   const [userName, setUserName] = useState('Haibin')
   const [nameDraft, setNameDraft] = useState('Haibin')
   const [createStatus, setCreateStatus] = useState<TaskStatus | null>(null)
@@ -86,6 +94,16 @@ export default function App() {
     }
   }
   function changeScope(next: ChatScope) {
+    if (next.projectId) {
+      setCurrentProjectId(next.projectId)
+      setCurrentRequirementId(
+        next.requirementId ??
+          (next.projectId === currentProjectId
+            ? currentRequirementId
+            : data?.requirements.find((r) => r.projectId === next.projectId)?.id),
+      )
+    }
+    setMobilePanel('chat')
     setScope(next)
     setSelectedTask(null)
     setMobileNav(false)
@@ -157,18 +175,21 @@ export default function App() {
         <span>正在载入 Rein…</span>
       </div>
     )
-  const sidebar = (
-    <Sidebar
-      data={data}
-      scope={scope}
-      onScope={changeScope}
-      onHide={toggleSidebar}
-      onAccount={setAccountAnchor}
-      onAgents={() => setInfo('agents')}
-      onWorkspace={setWorkspaceAnchor}
-      userName={userName}
-    />
-  )
+  const sidebarProps = {
+    data,
+    scope,
+    currentProjectId,
+    currentRequirementId,
+    onScope: changeScope,
+    onHide: toggleSidebar,
+    onAccount: setAccountAnchor,
+    onWorkspace: setWorkspaceAnchor,
+    userName,
+    onProject: (project?: Project) => setEntityEditor({ kind: 'project', project }),
+    onRequirement: (projectId: string) => setEntityEditor({ kind: 'requirement', projectId }),
+  }
+  const selectedAgent = data.agents.find((agent) => agent.id === scope.agentId)
+  const sidebar = <Sidebar {...sidebarProps} />
   return (
     <div
       className={`app-shell ${dragging ? 'is-resizing' : ''} ${preferences.fontSize.startsWith('14') ? 'font-standard' : ''}`}
@@ -178,7 +199,7 @@ export default function App() {
         } as CSSProperties
       }
     >
-      {!compact && sidebarVisible && sidebar}
+      {!compact && sidebarVisible ? sidebar : <SidebarRail {...sidebarProps} />}
       <Drawer
         open={compact && mobileNav}
         onClose={() => setMobileNav(false)}
@@ -187,9 +208,8 @@ export default function App() {
         {sidebar}
       </Drawer>
       <main className="main-workspace">
-        {(compact || !sidebarVisible) && (
+        {mobile && (
           <div className="compact-toolbar">
-            <Action label="显示侧栏" icon="collapse" onClick={toggleSidebar} />
             <Icon name="layers" size={20} />
             <span>Rein</span>
             <span className="spacer" />
@@ -205,17 +225,10 @@ export default function App() {
                   variant={mobilePanel === 'tasks' ? 'contained' : 'text'}
                   onClick={() => setMobilePanel('tasks')}
                 >
-                  任务
+                  {selectedAgent ? 'Memory' : '任务'}
                 </Button>
               </div>
             )}
-            <button
-              className="compact-account"
-              aria-label="个人菜单"
-              onClick={(e) => setAccountAnchor(e.currentTarget)}
-            >
-              <AgentAvatar size={22} />
-            </button>
           </div>
         )}
         <div
@@ -276,18 +289,22 @@ export default function App() {
               <Icon name="drag" size={14} />
             </span>
           </div>
-          <TaskPanel
-            data={data}
-            scope={scope}
-            selectedId={selectedTask ?? lastTaskId}
-            onTask={showTask}
-            onFlow={() => setInfo('flow')}
-            onCreate={(status) => {
-              setCreateStatus(status)
-              setTaskTitle('')
-            }}
-            onStatus={changeTaskStatus}
-          />
+          {selectedAgent ? (
+            <MemoryPanel agent={selectedAgent} />
+          ) : (
+            <TaskPanel
+              data={data}
+              scope={scope}
+              selectedId={selectedTask ?? lastTaskId}
+              onTask={showTask}
+              onFlow={() => setInfo('flow')}
+              onCreate={(status) => {
+                setCreateStatus(status)
+                setTaskTitle('')
+              }}
+              onStatus={changeTaskStatus}
+            />
+          )}
         </div>
       </main>
       <TaskDetails
@@ -301,7 +318,7 @@ export default function App() {
           setDetailWidthRatio(ratio)
           preferencesService.setDetailRatio(ratio)
         }}
-        availableLeft={!compact && sidebarVisible ? 296 : 0}
+        availableLeft={!compact && sidebarVisible ? 296 : 56}
         onExpand={() => setExpanded((v) => !v)}
         onClose={closeTask}
         onStatus={changeTaskStatus}
@@ -311,8 +328,8 @@ export default function App() {
         anchorEl={accountAnchor}
         open={!!accountAnchor}
         onClose={() => setAccountAnchor(null)}
-        anchorOrigin={{ vertical: compact ? 'bottom' : 'top', horizontal: 'left' }}
-        transformOrigin={{ vertical: compact ? 'top' : 'bottom', horizontal: 'left' }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         slotProps={{
           paper: {
             className: 'account-menu',
@@ -421,22 +438,20 @@ export default function App() {
       </Dialog>
       <Dialog open={!!info} onClose={() => setInfo(null)} fullWidth maxWidth="sm">
         <DialogTitle className="dialog-title">
-          {info === 'agents'
-            ? 'Agent 管理'
-            : info === 'flow'
-              ? '任务流'
-              : info === 'profile'
-                ? '个人'
-                : info === 'members'
-                  ? '群聊成员'
-                  : '帮助'}
+          {info === 'flow'
+            ? '任务流'
+            : info === 'profile'
+              ? '个人'
+              : info === 'members'
+                ? '群聊成员'
+                : '帮助'}
           <Action label="关闭对话框" icon="close" onClick={() => setInfo(null)} />
         </DialogTitle>
         <DialogContent>
-          {(info === 'agents' || info === 'flow') && (
+          {info === 'flow' && (
             <div className="placeholder-state">
-              <Icon name={info === 'agents' ? 'agents' : 'flow'} />
-              <h3>{info === 'agents' ? 'Agent 管理页待实现' : '任务流画布待实现'}</h3>
+              <Icon name="flow" />
+              <h3>任务流画布待实现</h3>
               <p>Figma 尚未提供此界面的完整设计。当前保留入口，后续按正式设计接入。</p>
               <Button variant="outlined" onClick={() => setInfo(null)}>
                 返回工作空间
@@ -534,6 +549,33 @@ export default function App() {
           </form>
         </DialogContent>
       </Dialog>
+      {entityEditor && (
+        <EntityDialog
+          key={`${entityEditor.kind}-${entityEditor.project?.id ?? entityEditor.projectId ?? 'new'}`}
+          editor={entityEditor}
+          onClose={() => setEntityEditor(null)}
+          onSaved={(result) => {
+            const editing = !!entityEditor.project
+            setEntityEditor(null)
+            if (result.kind === 'requirement')
+              changeScope({
+                id: result.id,
+                title: result.name,
+                label: '当前需求',
+                projectId: result.projectId,
+                requirementId: result.id,
+              })
+            else if (!editing || scope.id === `project-${result.id}`)
+              changeScope({
+                id: `project-${result.id}`,
+                title: result.name,
+                label: '当前项目',
+                projectId: result.id,
+              })
+            notify(editing ? '项目已更新' : result.kind === 'project' ? '项目已创建' : '需求已创建')
+          }}
+        />
+      )}
       {snackbar}
     </div>
   )

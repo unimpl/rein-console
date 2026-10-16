@@ -33,7 +33,7 @@ test('pane limits fill the viewport at either edge and survive reload and viewpo
     }
   }
   await page.setViewportSize({ width: 1600, height: 900 })
-  await page.getByRole('button', { name: '隐藏侧栏' }).click()
+  await page.getByRole('button', { name: '收起侧栏' }).click()
   await expect
     .poll(async () => {
       const todo = await page.locator('.task-panel').boundingBox()

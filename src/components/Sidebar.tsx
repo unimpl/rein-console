@@ -1,40 +1,52 @@
 import { useState } from 'react'
-import { Divider, ListItemButton, OutlinedInput } from '@mui/material'
-import type { AppData, ChatScope, TaskStatus } from '../types'
+import { Divider, IconButton, ListItemButton, OutlinedInput, Tooltip } from '@mui/material'
+import type { AppData, ChatScope, Project } from '../types'
 import { Action, AgentAvatar, Icon, StatusDot } from './shared'
-import { statusLabels } from '../constants'
 
 interface Props {
   data: AppData
   scope: ChatScope
+  currentProjectId: string
+  currentRequirementId?: string
   onScope: (scope: ChatScope) => void
   onHide: () => void
   onAccount: (el: HTMLElement) => void
-  onAgents: () => void
   onWorkspace: (el: HTMLElement) => void
+  onProject: (project?: Project) => void
+  onRequirement: (projectId: string) => void
   userName: string
 }
 export function Sidebar({
   data,
   scope,
+  currentProjectId,
   onScope,
   onHide,
   onAccount,
-  onAgents,
   onWorkspace,
+  onProject,
+  onRequirement,
   userName,
 }: Props) {
   const [search, setSearch] = useState('')
-  const matches = (text: string) => !search || text.toLowerCase().includes(search.toLowerCase())
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ gatewaykit: true })
+  const [visibleCount, setVisibleCount] = useState(5)
+  const matches = (text: string) => text.toLowerCase().includes(search.trim().toLowerCase())
+  const projects = data.projects.filter(
+    (project) =>
+      matches(project.name) ||
+      data.requirements.some((r) => r.projectId === project.id && matches(r.title)),
+  )
+  const visibleProjects = search ? projects : projects.slice(0, visibleCount)
   return (
     <aside className="sidebar" aria-label="工作空间导航">
       <div className="workspace-header">
         <button className="workspace-select" onClick={(e) => onWorkspace(e.currentTarget)}>
           <Icon name="layers" size={20} />
           <span>{data.workspace.name}</span>
-          <Icon name="down" size={14} />
+          <Icon name="down" />
         </button>
-        <Action label="隐藏侧栏" icon="collapse" onClick={onHide} />
+        <Action label="收起侧栏" icon="collapse" onClick={onHide} />
       </div>
       <div className="sidebar-scroll">
         <OutlinedInput
@@ -43,13 +55,14 @@ export function Sidebar({
           placeholder="搜索"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          startAdornment={<Icon name="search" size={16} />}
+          startAdornment={<Icon name="search" />}
           endAdornment={<span className="shortcut">⌘ K</span>}
           inputProps={{ 'aria-label': '搜索项目和需求' }}
         />
-        <nav className="navigation">
+        <nav className="navigation" aria-label="项目与对话">
           {matches('工作空间对话') && (
             <ListItemButton
+              component="button"
               selected={scope.id === 'workspace'}
               onClick={() => onScope({ id: 'workspace', title: '工作空间对话', label: '工作空间' })}
             >
@@ -57,36 +70,46 @@ export function Sidebar({
               工作空间对话
             </ListItemButton>
           )}
-          {matches('Agent 管理') && (
-            <ListItemButton onClick={onAgents}>
-              <Icon name="agents" />
-              Agent 管理
-            </ListItemButton>
-          )}
           <Divider className="nav-divider" />
-          <div className="nav-label">项目</div>
-          {data.projects.map((project) => {
+          <div className="nav-label">
+            <span>项目</span>
+            <Action
+              label="新建项目"
+              icon="plus"
+              className="quiet-action"
+              onClick={() => onProject()}
+            />
+          </div>
+          {visibleProjects.map((project) => {
             const requirements = data.requirements.filter((r) => r.projectId === project.id)
-            if (!matches(project.name) && !requirements.some((r) => matches(r.title))) return null
+            const open = search ? true : (expanded[project.id] ?? project.id === currentProjectId)
             return (
-              <div className="project-tree" key={project.id}>
-                <ListItemButton
-                  selected={scope.id === `project-${project.id}`}
-                  onClick={() =>
-                    onScope({
-                      id: `project-${project.id}`,
-                      title: project.name,
-                      label: '当前项目',
-                      projectId: project.id,
-                    })
-                  }
-                >
-                  <Icon name="cube" />
-                  {project.name}
-                </ListItemButton>
-                {(project.id === 'gatewaykit' || scope.projectId === project.id) && (
-                  <>
+              <div className="project-tree" key={project.id} data-project-id={project.id}>
+                <div className="project-row">
+                  <ListItemButton
+                    component="button"
+                    className="project-toggle"
+                    aria-label={`${open ? '收起' : '展开'}项目 ${project.name}`}
+                    aria-expanded={open}
+                    onClick={() => setExpanded((prev) => ({ ...prev, [project.id]: !open }))}
+                  >
+                    <span className={`tree-chevron ${open ? 'expanded' : ''}`}>
+                      <Icon name="down" />
+                    </span>
+                    <Icon name="cube" />
+                    <span className="nav-text">{project.name}</span>
+                  </ListItemButton>
+                  <Action
+                    label={`编辑项目 ${project.name}`}
+                    icon="edit"
+                    className="project-edit quiet-action"
+                    onClick={() => onProject(project)}
+                  />
+                </div>
+                {open && (
+                  <div className="project-children">
                     <ListItemButton
+                      component="button"
                       className="tree-child"
                       selected={scope.id === `project-${project.id}`}
                       onClick={() =>
@@ -99,13 +122,23 @@ export function Sidebar({
                       }
                     >
                       <Icon name="chat" />
-                      项目对话
+                      <span>项目对话</span>
                     </ListItemButton>
+                    <div className="requirements-heading">
+                      <span>需求</span>
+                      <Action
+                        label={`在${project.name}中新建需求`}
+                        icon="plus"
+                        className="quiet-action"
+                        onClick={() => onRequirement(project.id)}
+                      />
+                    </div>
                     {requirements
                       .filter((r) => matches(r.title) || matches(project.name))
                       .map((requirement) => (
-                        <div key={requirement.id}>
+                        <div className="requirement-row" key={requirement.id}>
                           <ListItemButton
+                            component="button"
                             className="tree-child"
                             selected={scope.id === requirement.id}
                             onClick={() =>
@@ -119,56 +152,53 @@ export function Sidebar({
                             }
                           >
                             <Icon name="doc" />
-                            {requirement.title}
+                            <span className="nav-text">{requirement.title}</span>
                           </ListItemButton>
-                          {requirement.id === 'gateway' && (
-                            <div className="status-tree">
-                              {(Object.keys(statusLabels) as TaskStatus[]).map((status) => (
-                                <ListItemButton
-                                  key={status}
-                                  className="tree-status"
-                                  selected={scope.id === `${requirement.id}-${status}`}
-                                  onClick={() =>
-                                    onScope({
-                                      id: `${requirement.id}-${status}`,
-                                      title: `${requirement.title} · ${statusLabels[status]}`,
-                                      label: statusLabels[status],
-                                      projectId: project.id,
-                                      requirementId: requirement.id,
-                                      status,
-                                    })
-                                  }
-                                >
-                                  <StatusDot status={status} />
-                                  <span>{statusLabels[status]}</span>
-                                  <span className="count">
-                                    {
-                                      data.tasks.filter(
-                                        (t) =>
-                                          t.requirementId === requirement.id && t.status === status,
-                                      ).length
-                                    }
-                                  </span>
-                                </ListItemButton>
-                              ))}
-                            </div>
-                          )}
+                          <Action
+                            label={`从${requirement.title}新建需求`}
+                            icon="plus"
+                            className="requirement-add quiet-action"
+                            onClick={() => onRequirement(project.id)}
+                          />
                         </div>
                       ))}
-                  </>
+                  </div>
                 )}
               </div>
             )
           })}
+          {!search && projects.length > visibleCount && (
+            <button
+              className="show-more-projects"
+              onClick={() => setVisibleCount((count) => count + 3)}
+            >
+              展示更多
+              <Icon name="down" />
+            </button>
+          )}
+          {projects.length === 0 && <p className="search-empty">没有匹配的项目或需求</p>}
         </nav>
         {!search && (
           <div className="agent-roster">
             <div className="roster-header">
               <span>Agents</span>
-              <Action label="添加 Agent" icon="plus" onClick={onAgents} />
             </div>
             {data.agents.map((agent) => (
-              <ListItemButton key={agent.id} onClick={onAgents}>
+              <ListItemButton
+                component="button"
+                key={agent.id}
+                aria-label={`与${agent.name}对话`}
+                aria-pressed={scope.agentId === agent.id}
+                selected={scope.agentId === agent.id}
+                onClick={() =>
+                  onScope({
+                    id: `agent-${agent.id}`,
+                    title: agent.name,
+                    label: 'Agent 对话',
+                    agentId: agent.id,
+                  })
+                }
+              >
                 <AgentAvatar
                   agent={{
                     ...agent,
@@ -189,11 +219,6 @@ export function Sidebar({
             ))}
           </div>
         )}
-        {search &&
-          !data.projects.some((p) => matches(p.name)) &&
-          !data.requirements.some((r) => matches(r.title)) && (
-            <p className="search-empty">没有匹配的项目或需求</p>
-          )}
       </div>
       <div className="account-footer">
         <Divider />
@@ -207,6 +232,88 @@ export function Sidebar({
           <Icon name="more" />
         </button>
       </div>
+    </aside>
+  )
+}
+
+export function SidebarRail({
+  data,
+  scope,
+  currentProjectId,
+  currentRequirementId,
+  onScope,
+  onHide,
+  onAccount,
+}: Props) {
+  const project = data.projects.find((p) => p.id === currentProjectId)
+  const requirement = data.requirements.find((r) => r.id === currentRequirementId)
+  const actions = [
+    {
+      label: '当前工作空间对话',
+      title: data.workspace.name,
+      icon: 'chat',
+      active: scope.id === 'workspace',
+      disabled: false,
+      action: () => onScope({ id: 'workspace', title: '工作空间对话', label: '工作空间' }),
+    },
+    {
+      label: '当前项目对话',
+      title: project?.name ?? '尚未选择项目',
+      icon: 'cube',
+      active: scope.id === `project-${project?.id}`,
+      disabled: !project,
+      action: () =>
+        project &&
+        onScope({
+          id: `project-${project.id}`,
+          title: project.name,
+          label: '当前项目',
+          projectId: project.id,
+        }),
+    },
+    {
+      label: '当前需求对话',
+      title: requirement?.title ?? '此项目暂无需求',
+      icon: 'doc',
+      active: scope.id === requirement?.id,
+      disabled: !requirement,
+      action: () =>
+        requirement &&
+        onScope({
+          id: requirement.id,
+          title: requirement.title,
+          label: '当前需求',
+          projectId: requirement.projectId,
+          requirementId: requirement.id,
+        }),
+    },
+  ]
+  return (
+    <aside className="sidebar-rail" aria-label="窄侧栏">
+      <Action label="展开侧栏" icon="collapse" onClick={onHide} />
+      <nav aria-label="快捷对话">
+        {actions.map((item) => (
+          <Tooltip key={item.label} title={`${item.label} · ${item.title}`} placement="right">
+            <span>
+              <IconButton
+                aria-label={item.label}
+                disabled={item.disabled}
+                className={item.active ? 'rail-active' : ''}
+                onClick={item.action}
+              >
+                <Icon name={item.icon} />
+              </IconButton>
+            </span>
+          </Tooltip>
+        ))}
+      </nav>
+      <button
+        className="rail-account"
+        aria-label="个人菜单"
+        onClick={(e) => onAccount(e.currentTarget)}
+      >
+        <AgentAvatar size={24} />
+      </button>
     </aside>
   )
 }

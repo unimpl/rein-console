@@ -226,7 +226,7 @@ Outlined fields use the divider stroke, label typography, the control radius and
 
 ### Navigation
 
-Sidebar rows have a minimum height of (32px), (5px 8px) padding and (8px) gaps. Selection uses pale blue with primary ink. Project and requirement rows retain their existing indentation, counts and small status icons. Settings categories use taller (36px) rows and muted gray selection. Account actions appear in a (264px) menu with (6px) paper padding; its dismiss backdrop stays transparent.
+Sidebar rows have a minimum height of (32px), (5px 8px) padding and (8px) icon gaps. Selection uses pale blue with primary ink. Project rows toggle their tree, with project chat first and leaf requirements below. Project editing appears on hover or keyboard focus. Show five projects initially, then three more per click. Collapsed navigation leaves a (56px) rail with restore and workspace/project/requirement shortcuts; the avatar stays at the bottom. Agent roster rows open direct conversations and replace Todo with Memory. Do not add Agent management or task-status children to this navigation. Settings categories use taller (36px) rows and muted gray selection. Account actions appear in a (264px) menu with (6px) paper padding; its dismiss backdrop stays transparent.
 
 ### Cards / Containers
 
@@ -235,6 +235,8 @@ Task cards are white, outlined and rounded with (10px) padding and a minimum hei
 ### Conversation
 
 Messages pair avatars with author and time metadata. Agent bubbles use muted gray; the user's bubbles use selected pale blue and align to the right. Bubbles use body typography, the container radius and (9px 12px) padding. Long text wraps without widening the pane. Inline task assignments form bordered rows (48px) high, with task actions opening the same detail view as task cards.
+
+The composer has no scope chip. Agent conversations use the same composer and show an illustrative, editable-vector Memory graph in the adjacent pane. Keep the planning note visible; Memory has no implemented storage or execution behavior. Project and requirement dialogs share a compact (440px × 380px) form with external labels, name and description fields, and cancel/save actions. Retain Material UI and the existing ChatGPT UI Kit reference patterns.
 
 ### Terminal and task detail
 

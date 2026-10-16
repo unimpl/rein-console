@@ -46,6 +46,7 @@ const paths: Record<string, string> = {
   shield: 'settings-MaterialShield',
   brand: 'login-MaterialLayers',
   save: 'settings-MaterialCheck',
+  edit: 'material-edit',
 }
 export function Icon({
   name,

@@ -64,7 +64,15 @@ const regression: TerminalLine[] = [
   { text: '等待剩余测试完成…', tone: 'muted' },
 ]
 export const seed: AppData = {
-  workspace: { id: 'default', name: 'default', projectIds: ['gatewaykit', 'devtools'] },
+  workspace: {
+    id: 'default',
+    name: 'default',
+    projectIds: [
+      'gatewaykit',
+      'devtools',
+      ...Array.from({ length: 8 }, (_, i) => `demo-project-${i}`),
+    ],
+  },
   projects: [
     {
       id: 'gatewaykit',
@@ -73,6 +81,22 @@ export const seed: AppData = {
       requirementIds: ['gateway', 'access'],
     },
     { id: 'devtools', name: '开发者工具', workspaceId: 'default', requirementIds: ['tooling'] },
+    ...[
+      'Rein Console',
+      '文档站点',
+      '监控平台',
+      '自动化工具',
+      '故障排查',
+      '集成测试',
+      '发布流水线',
+      '内部知识库',
+    ].map((name, index) => ({
+      id: `demo-project-${index}`,
+      name,
+      description: '示例项目',
+      workspaceId: 'default',
+      requirementIds: [],
+    })),
   ],
   requirements: [
     { id: 'gateway', title: '网关稳定性', projectId: 'gatewaykit' },
@@ -86,6 +110,13 @@ export const seed: AppData = {
   ],
   tasks,
   messages: [
+    ...['alex', 'sam', 'robin'].map((agentId) => ({
+      id: `agent-welcome-${agentId}`,
+      scopeId: `agent-${agentId}`,
+      authorId: agentId,
+      time: '14:20',
+      content: '可以在这里直接与我交流。右侧 Memory 目前展示知识图谱示意，内容还在规划中。',
+    })),
     {
       id: 'm1',
       scopeId: 'gateway',

@@ -1,4 +1,4 @@
-import type { AppData, ChatScope, Task, TaskStatus } from '../types'
+import type { AppData, ChatScope, Project, Requirement, Task, TaskStatus } from '../types'
 import { seed } from './seed'
 
 // Replace this adapter with HTTP/WebSocket calls when a backend is available.
@@ -38,7 +38,7 @@ export const reinService = {
       data.messages.push({
         id: crypto.randomUUID(),
         scopeId,
-        authorId: 'alex',
+        authorId: scopeId.startsWith('agent-') ? scopeId.slice(6) : 'alex',
         time: time(),
         content: '已收到你的消息。这是模拟回复；接入运行服务后，Agent 将在此继续处理。',
       })
@@ -86,6 +86,49 @@ export const reinService = {
       activities: [{ time: time(), text: '用户创建任务' }],
     })
     publish()
+  },
+  async saveProject(input: { id?: string; name: string; description: string }) {
+    const name = input.name.trim()
+    if (!name) throw new Error('请输入项目名称。')
+    if (data.projects.some((p) => p.id !== input.id && p.name === name))
+      throw new Error('此工作空间已有同名项目。')
+    let project: Project
+    if (input.id) {
+      const existing = data.projects.find((p) => p.id === input.id)
+      if (!existing) throw new Error('项目不存在，请重新选择。')
+      project = { ...existing, name, description: input.description.trim() }
+      data.projects = data.projects.map((p) => (p.id === project.id ? project : p))
+    } else {
+      project = {
+        id: crypto.randomUUID(),
+        name,
+        description: input.description.trim(),
+        workspaceId: data.workspace.id,
+        requirementIds: [],
+      }
+      data.projects.unshift(project)
+      data.workspace.projectIds.unshift(project.id)
+    }
+    publish()
+    return structuredClone(project)
+  },
+  async createRequirement(projectId: string, input: { name: string; description: string }) {
+    const project = data.projects.find((p) => p.id === projectId)
+    if (!project) throw new Error('请选择所属项目。')
+    const title = input.name.trim()
+    if (!title) throw new Error('请输入需求名称。')
+    if (data.requirements.some((r) => r.projectId === projectId && r.title === title))
+      throw new Error('此项目已有同名需求。')
+    const requirement: Requirement = {
+      id: crypto.randomUUID(),
+      title,
+      description: input.description.trim(),
+      projectId,
+    }
+    data.requirements.push(requirement)
+    project.requirementIds.push(requirement.id)
+    publish()
+    return structuredClone(requirement)
   },
   async exportData() {
     return JSON.stringify({ mode: 'mock', ...data }, null, 2)

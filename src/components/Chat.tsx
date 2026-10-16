@@ -19,6 +19,7 @@ export function Chat({ data, scope, onTask, onMembers, notify, sendMode, userNam
   const setDraft = (value: string) => setDrafts((prev) => ({ ...prev, [scope.id]: value }))
   const [memberAnchor, setMemberAnchor] = useState<HTMLElement | null>(null)
   const messages = data.messages.filter((m) => m.scopeId === scope.id)
+  const selectedAgent = data.agents.find((agent) => agent.id === scope.agentId)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -46,17 +47,23 @@ export function Chat({ data, scope, onTask, onMembers, notify, sendMode, userNam
   return (
     <section className="chat-panel" aria-label="群聊">
       <header className="panel-header chat-header">
-        <Icon name="people" size={24} />
+        {selectedAgent ? (
+          <AgentAvatar agent={selectedAgent} size={24} />
+        ) : (
+          <Icon name="people" size={24} />
+        )}
         <div className="chat-heading">
           <h1>{scope.title}</h1>
-          <span>群聊</span>
+          <span>{selectedAgent ? `Agent · ${selectedAgent.role}` : '群聊'}</span>
         </div>
-        <div className="header-members">
-          {data.agents.map((agent) => (
-            <AgentAvatar key={agent.id} agent={agent} />
-          ))}
-        </div>
-        <Action label="查看群聊成员" icon="plus" onClick={onMembers} />
+        {!selectedAgent && (
+          <div className="header-members">
+            {data.agents.map((agent) => (
+              <AgentAvatar key={agent.id} agent={agent} />
+            ))}
+          </div>
+        )}
+        {!selectedAgent && <Action label="查看群聊成员" icon="plus" onClick={onMembers} />}
         <Action
           label="聊天范围说明"
           onClick={() => notify(`当前聊天范围：${scope.title}。消息仅发送到此范围。`)}
@@ -187,13 +194,6 @@ export function Chat({ data, scope, onTask, onMembers, notify, sendMode, userNam
               icon="attach"
               onClick={() => fileRef.current?.click()}
             />
-            <Button
-              variant="outlined"
-              startIcon={<Icon name="doc" />}
-              onClick={() => notify(`消息范围：${scope.title}`)}
-            >
-              {scope.label}
-            </Button>
             <span className="spacer" />
             <Button
               type="submit"

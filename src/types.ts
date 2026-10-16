@@ -8,12 +8,14 @@ export interface Workspace {
 export interface Project {
   id: string
   name: string
+  description?: string
   workspaceId: string
   requirementIds: string[]
 }
 export interface Requirement {
   id: string
   title: string
+  description?: string
   projectId: string
 }
 export interface Agent {
@@ -62,6 +64,7 @@ export interface ChatScope {
   label: string
   projectId?: string
   requirementId?: string
+  agentId?: string
   status?: TaskStatus
 }
 export interface AppData {

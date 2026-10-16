@@ -1602,3 +1602,274 @@ textarea {
   align-items: center;
   justify-content: center;
 }
+/* Project navigation and the persistent collapsed rail share the compact MUI scale. */
+.navigation {
+  gap: 4px;
+}
+.nav-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  flex: none;
+}
+.nav-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quiet-action {
+  opacity: 0.5;
+}
+.quiet-action:hover,
+.quiet-action:focus-visible {
+  opacity: 1;
+}
+.project-tree {
+  gap: 4px;
+}
+.project-row,
+.requirement-row {
+  position: relative;
+  min-width: 0;
+}
+.project-toggle {
+  width: 100%;
+  padding-right: 36px !important;
+}
+.tree-chevron {
+  display: flex;
+  transform: rotate(-90deg);
+  opacity: 0.65;
+}
+.tree-chevron.expanded {
+  transform: none;
+}
+.project-edit,
+.requirement-add {
+  position: absolute !important;
+  right: 3px;
+  top: 3px;
+}
+.project-edit {
+  opacity: 0;
+}
+.project-row:hover .project-edit,
+.project-row:focus-within .project-edit {
+  opacity: 0.6;
+}
+.project-row .project-edit:focus-visible {
+  opacity: 1;
+}
+.project-children {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.requirement-row .tree-child {
+  width: 100%;
+  padding-right: 36px;
+}
+.requirements-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 3px 0 32px;
+  color: var(--secondary);
+  font-size: 11px;
+}
+.show-more-projects {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  text-align: left;
+  min-height: 32px;
+  padding: 4px 8px 4px 32px;
+  color: var(--secondary);
+  font-size: 12px;
+}
+.show-more-projects:hover {
+  background: #eef0f4;
+  border-radius: 6px;
+}
+.sidebar-rail {
+  width: 56px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  height: 100dvh;
+  padding: 16px 0;
+  border-right: 1px solid var(--border);
+  background: #f7f8fa;
+}
+.sidebar-rail > .MuiIconButton-root {
+  width: 32px;
+  height: 32px;
+}
+.sidebar-rail nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sidebar-rail nav .MuiIconButton-root {
+  width: 36px;
+  height: 36px;
+}
+.sidebar-rail .rail-active {
+  background: #eaf2ff;
+}
+.rail-account {
+  margin-top: auto;
+  padding: 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+}
+.rail-account:hover {
+  background: #eaf2ff;
+}
+.entity-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px !important;
+}
+.entity-dialog .MuiDialog-paper {
+  max-width: 440px;
+}
+.entity-dialog form {
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
+}
+.entity-dialog .dialog-title {
+  min-height: 64px;
+}
+.entity-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.entity-field label {
+  font-size: 12px;
+  line-height: 16px;
+}
+.entity-field .MuiOutlinedInput-root {
+  min-height: 36px;
+}
+.entity-field .MuiOutlinedInput-multiline {
+  min-height: 88px;
+  padding: 10px;
+  align-items: flex-start;
+}
+.entity-field textarea.MuiInputBase-input {
+  padding: 0;
+  line-height: 21px;
+}
+.entity-actions {
+  padding: 12px 24px 20px !important;
+  gap: 8px;
+}
+.entity-actions .MuiButton-root {
+  min-width: 72px;
+  min-height: 32px;
+}
+.memory-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: #fff;
+}
+.memory-planning {
+  font-size: 11px;
+  color: var(--secondary);
+}
+.memory-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 24px 20px;
+}
+.memory-intro {
+  align-self: stretch;
+}
+.memory-intro p {
+  font-size: 11px;
+  color: var(--secondary);
+  margin-top: 4px;
+}
+.memory-graph {
+  width: 100%;
+  max-width: 520px;
+  flex: 0 0 auto;
+  margin: auto 0;
+}
+.memory-placeholder-note {
+  margin-top: 16px;
+  color: var(--secondary);
+  text-align: center;
+  font-size: 11px;
+  line-height: 18px;
+}
+@media (max-width: 899px) {
+  .split-layout > .memory-panel {
+    flex: 1;
+    width: 100%;
+  }
+  .mobile-show-chat > .memory-panel {
+    display: none;
+  }
+  .memory-body {
+    padding: 20px 16px;
+  }
+  .memory-graph text {
+    font-size: 17px;
+  }
+  .chat-header .header-members {
+    display: none;
+  }
+  .chat-header > .MuiIconButton-root {
+    flex: none;
+  }
+}
+@media (hover: none) {
+  .project-edit {
+    opacity: 0.5;
+  }
+}
+.workspace-header {
+  height: 32px;
+}
+.sidebar-scroll {
+  padding-top: 4px;
+}
+.navigation {
+  padding-top: 4px;
+}
+.navigation .nav-divider {
+  margin: 8px 0 12px;
+}
+.agent-roster {
+  margin-top: 4px;
+}
+.account-button {
+  height: 40px;
+  padding-top: 4px;
+}
+.sidebar-rail > .MuiIconButton-root {
+  width: 36px;
+  height: 36px;
+}
+.sidebar-rail nav {
+  gap: 16px;
+}
