@@ -15,6 +15,7 @@ interface Props {
   onProject: (project?: Project) => void
   onRequirement: (projectId: string, requirement?: Requirement) => void
   onAgentSettings: (agent: Agent) => void
+  onCreateAgent: () => void
   userName: string
 }
 export function Sidebar({
@@ -28,6 +29,7 @@ export function Sidebar({
   onProject,
   onRequirement,
   onAgentSettings,
+  onCreateAgent,
   userName,
 }: Props) {
   const [search, setSearch] = useState('')
@@ -102,7 +104,7 @@ export function Sidebar({
                         <span className={`tree-chevron ${open ? 'expanded' : ''}`}>
                           <Icon name="down" />
                         </span>
-                        <Icon name="cube" />
+                        <Icon name="project" />
                         <span className="nav-text">{project.name}</span>
                       </ListItemButton>
                       <Action
@@ -157,7 +159,7 @@ export function Sidebar({
                                   })
                                 }
                               >
-                                <Icon name="doc" />
+                                <Icon name="requirement" />
                                 <span className="nav-text">{requirement.title}</span>
                               </ListItemButton>
                               <Action
@@ -190,6 +192,12 @@ export function Sidebar({
           <div className="agent-roster">
             <div className="roster-header">
               <span>Agents</span>
+              <Action
+                label="新建 Agent"
+                icon="plus"
+                className="quiet-action"
+                onClick={onCreateAgent}
+              />
             </div>
             {data.agents.map((agent) => (
               <div className="agent-roster-row" key={agent.id}>
@@ -264,7 +272,7 @@ export function SidebarRail({
     {
       label: '当前项目对话',
       title: project?.name ?? '尚未选择项目',
-      icon: 'cube',
+      icon: 'project',
       active: scope.id === `project-${project?.id}`,
       disabled: !project,
       action: () =>
@@ -279,7 +287,7 @@ export function SidebarRail({
     {
       label: '当前需求对话',
       title: requirement?.title ?? '此项目暂无需求',
-      icon: 'doc',
+      icon: 'requirement',
       active: scope.id === requirement?.id,
       disabled: !requirement,
       action: () =>

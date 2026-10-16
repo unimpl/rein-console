@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   Alert,
+  Button,
   ButtonBase,
   Dialog,
   DialogTitle,
@@ -10,10 +11,12 @@ import {
 } from '@mui/material'
 import type { Agent, AgentConfiguration } from '../types'
 import { agentConfigService } from '../services/agentConfigService'
+import { reinService } from '../services/reinService'
 import { Row as SettingRow } from './Settings'
 import { Action, Icon } from './shared'
 
 const categories = [
+  { name: '基本设置', icon: 'settings', description: '设置 Agent 的身份、职责与运行类型。' },
   { name: 'A2A 配置', icon: 'flow', description: '配置 Agent 间的通信与能力发现。' },
   { name: '本地配置', icon: 'computer', description: '配置此 Agent 的本地运行参数。' },
   { name: 'SKILL 配置', icon: 'doc', description: '管理此 Agent 可发现的技能与加载方式。' },
@@ -75,7 +78,11 @@ function ConfigSelect({
       }}
     >
       {options.map((option) => (
-        <option key={option}>{option}</option>
+        <option key={option} value={option}>
+          {label === 'Agent 类型'
+            ? { claude: 'Claude Code', codex: 'Codex', pi: 'pi' }[option as Agent['provider']]
+            : option}
+        </option>
       ))}
     </Select>
   )
@@ -107,14 +114,26 @@ function ConfigToggle({
   )
 }
 
-export function AgentSettings({ agent, onClose }: { agent: Agent; onClose: () => void }) {
+export function AgentSettings({
+  agent,
+  onClose,
+  onSaved,
+}: {
+  agent?: Agent
+  onClose: () => void
+  onSaved: (agent: Agent) => void
+}) {
+  const creating = !agent
   const [value, setValue] = useState<AgentConfiguration | null>(null)
   const draft = useRef<AgentConfiguration | null>(null)
   const dirty = useRef(false)
   const navRef = useRef<HTMLElement>(null)
   const [category, setCategory] = useState(0)
   const [error, setError] = useState('')
-  const [status, setStatus] = useState('演示配置 · 更改自动保存，仅本次会话有效')
+  const [status, setStatus] = useState(
+    creating ? '演示 Agent · 创建后仅本次会话有效' : '演示配置 · 更改自动保存，仅本次会话有效',
+  )
+  const [saving, setSaving] = useState(false)
   useEffect(() => {
     let active = true
     void agentConfigService.get(agent).then((config) => {
@@ -146,24 +165,34 @@ export function AgentSettings({ agent, onClose }: { agent: Agent; onClose: () =>
   ) {
     if (!draft.current) return
     const next = { ...draft.current, [section]: { ...draft.current[section], ...patch } }
+    if (section === 'basic') {
+      const provider = (patch as Partial<AgentConfiguration['basic']>).provider
+      if (provider && next.local.executable === draft.current.basic.provider)
+        next.local = { ...next.local, executable: provider }
+    }
     draft.current = next
     dirty.current = true
     setValue(next)
     setError('')
-    setStatus('编辑中 · 移开焦点后保存')
+    setStatus(creating ? '新 Agent 配置待创建' : '编辑中 · 移开焦点后保存')
   }
-  async function save() {
+  async function save(create = false) {
+    if (creating && !create) return true
     if (!draft.current || !dirty.current) return true
+    setSaving(true)
     try {
-      await agentConfigService.save(agent.id, draft.current)
+      const saved = await reinService.saveAgent(draft.current, agent?.id)
       dirty.current = false
       setError('')
       setStatus('配置已保存 · 仅本次会话有效')
+      onSaved(saved)
       return true
     } catch (err) {
       setError((err as Error).message)
       setStatus('尚未保存，请修正输入')
       return false
+    } finally {
+      setSaving(false)
     }
   }
   async function close() {
@@ -176,7 +205,7 @@ export function AgentSettings({ agent, onClose }: { agent: Agent; onClose: () =>
       onClose={() => void close()}
       maxWidth={false}
       className="settings-dialog agent-config-dialog"
-      aria-labelledby={`agent-settings-${agent.id}`}
+      aria-labelledby={`agent-settings-${agent?.id ?? 'new'}`}
       slotProps={{
         paper: {
           sx: {
@@ -189,9 +218,15 @@ export function AgentSettings({ agent, onClose }: { agent: Agent; onClose: () =>
         },
       }}
     >
-      <DialogTitle className="settings-title" id={`agent-settings-${agent.id}`}>
-        Agent 设置 · {agent.name}
-        <Action label="关闭 Agent 设置" icon="close" onClick={() => void close()} />
+      <DialogTitle className="settings-title" id={`agent-heading-${agent?.id ?? 'new'}`}>
+        <span id={`agent-settings-${agent?.id ?? 'new'}`}>
+          {creating ? '新建 Agent' : `Agent 设置 · ${value?.basic.name || agent.name}`}
+        </span>
+        <Action
+          label={creating ? '关闭新建 Agent' : '关闭 Agent 设置'}
+          icon="close"
+          onClick={() => void close()}
+        />
       </DialogTitle>
       <div className="settings-body">
         <nav className="settings-nav" aria-label="Agent 配置分类" ref={navRef}>
@@ -210,7 +245,8 @@ export function AgentSettings({ agent, onClose }: { agent: Agent; onClose: () =>
           ))}
           <span className="spacer" />
           <small>
-            {agent.name} · {agent.cli}
+            {creating ? '新建' : value?.basic.name || agent.name} ·{' '}
+            {value ? { claude: 'Claude Code', codex: 'Codex', pi: 'Pi' }[value.basic.provider] : ''}
           </small>
         </nav>
         <section className="settings-content" aria-label={categories[category].name}>
@@ -226,6 +262,37 @@ export function AgentSettings({ agent, onClose }: { agent: Agent; onClose: () =>
           ) : (
             <div className="settings-fields">
               {category === 0 && (
+                <>
+                  <SettingRow label="名称" description="在对话和任务中显示的名字。">
+                    <ConfigInput
+                      label="名称"
+                      value={value.basic.name}
+                      onChange={(name) => update('basic', { name })}
+                      onCommit={save}
+                    />
+                  </SettingRow>
+                  <SettingRow label="描述" description="说明 Agent 的职责与能力。">
+                    <ConfigInput
+                      label="描述"
+                      value={value.basic.description}
+                      onChange={(description) => update('basic', { description })}
+                      onCommit={save}
+                    />
+                  </SettingRow>
+                  <SettingRow label="Agent 类型" description="选择此 Agent 使用的运行工具。">
+                    <ConfigSelect
+                      label="Agent 类型"
+                      value={value.basic.provider}
+                      options={['claude', 'codex', 'pi']}
+                      onChange={(provider) =>
+                        update('basic', { provider: provider as Agent['provider'] })
+                      }
+                      onCommit={save}
+                    />
+                  </SettingRow>
+                </>
+              )}
+              {category === 1 && (
                 <>
                   <SettingRow label="服务地址" description="Agent 的 A2A 接口地址。">
                     <ConfigInput
@@ -275,7 +342,7 @@ export function AgentSettings({ agent, onClose }: { agent: Agent; onClose: () =>
                   </SettingRow>
                 </>
               )}
-              {category === 1 && (
+              {category === 2 && (
                 <>
                   <SettingRow label="可执行文件" description="由执行服务解析，此处不会运行。">
                     <ConfigInput
@@ -325,7 +392,7 @@ export function AgentSettings({ agent, onClose }: { agent: Agent; onClose: () =>
                   </SettingRow>
                 </>
               )}
-              {category === 2 && (
+              {category === 3 && (
                 <>
                   <SettingRow label="技能目录" description="每个目录包含独立的 SKILL.md。">
                     <ConfigInput
@@ -361,7 +428,7 @@ export function AgentSettings({ agent, onClose }: { agent: Agent; onClose: () =>
                   </SettingRow>
                 </>
               )}
-              {category === 3 && (
+              {category === 4 && (
                 <>
                   <SettingRow label="存储方式" description="前端仅保存配置，不创建存储。">
                     <ConfigSelect
@@ -417,6 +484,15 @@ export function AgentSettings({ agent, onClose }: { agent: Agent; onClose: () =>
           )}
           <div className="settings-status" role="status">
             <span>{status}</span>
+            {creating && (
+              <Button
+                variant="contained"
+                disabled={saving || !value?.basic.name.trim()}
+                onClick={() => void save(true)}
+              >
+                {saving ? '正在创建…' : '创建 Agent'}
+              </Button>
+            )}
           </div>
         </section>
       </div>

@@ -107,6 +107,7 @@ export const seed: AppData = {
     {
       id: 'alex',
       name: 'Alex',
+      description: '负责架构设计与方案拆解。',
       role: '架构',
       color: '#08a56d',
       online: true,
@@ -116,6 +117,7 @@ export const seed: AppData = {
     {
       id: 'sam',
       name: 'Sam',
+      description: '实现与维护项目代码。',
       role: '开发',
       color: '#0866ff',
       online: true,
@@ -125,6 +127,7 @@ export const seed: AppData = {
     {
       id: 'robin',
       name: 'Robin',
+      description: '负责代码复核与质量检查。',
       role: '审查',
       color: '#8b31d5',
       online: false,

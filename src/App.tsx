@@ -31,6 +31,7 @@ import { AgentSettings } from './components/AgentSettings'
 import { Login } from './components/Login'
 import { Action, AgentAvatar, Icon } from './components/shared'
 import { statusLabels } from './constants'
+import { statusColors } from './theme'
 import './App.css'
 
 export default function App() {
@@ -53,7 +54,7 @@ export default function App() {
   const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null)
   const [workspaceAnchor, setWorkspaceAnchor] = useState<HTMLElement | null>(null)
   const [settings, setSettings] = useState(false)
-  const [configuredAgent, setConfiguredAgent] = useState<Agent | null>(null)
+  const [configuredAgent, setConfiguredAgent] = useState<Agent | 'new' | null>(null)
   const [logout, setLogout] = useState(false)
   const [loggedIn, setLoggedIn] = useState(true)
   const [preferences, setPreferences] = useState(preferencesService.load)
@@ -200,6 +201,7 @@ export default function App() {
     onRequirement: (projectId: string, requirement?: Requirement) =>
       setEntityEditor({ kind: 'requirement', projectId, requirement }),
     onAgentSettings: (agent: Agent) => setConfiguredAgent(agent),
+    onCreateAgent: () => setConfiguredAgent('new'),
   }
   const selectedAgent = data.agents.find((agent) => agent.id === scope.agentId)
   const sidebar = <Sidebar {...sidebarProps} />
@@ -209,6 +211,13 @@ export default function App() {
       style={
         {
           '--terminal-size': preferences.terminal.includes('13 px') ? '13px' : '12px',
+          '--task-todo': statusColors.todo,
+          '--task-running': statusColors.running,
+          '--task-done': statusColors.done,
+          '--waiting-bg': statusColors.waitingBackground,
+          '--waiting-border': statusColors.waitingBorder,
+          '--waiting-text': statusColors.waitingText,
+          '--waiting-badge': statusColors.waitingBadge,
         } as CSSProperties
       }
     >
@@ -587,9 +596,18 @@ export default function App() {
       )}
       {configuredAgent && (
         <AgentSettings
-          key={configuredAgent.id}
-          agent={configuredAgent}
+          key={configuredAgent === 'new' ? 'new' : configuredAgent.id}
+          agent={configuredAgent === 'new' ? undefined : configuredAgent}
           onClose={() => setConfiguredAgent(null)}
+          onSaved={(agent) => {
+            setScope((previous) =>
+              previous.agentId === agent.id ? { ...previous, title: agent.name } : previous,
+            )
+            if (configuredAgent === 'new') {
+              setConfiguredAgent(null)
+              notify('Agent 已创建（模拟），尚未连接运行服务')
+            }
+          }}
         />
       )}
       {snackbar}

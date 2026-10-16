@@ -1,5 +1,15 @@
 import { createTheme } from '@mui/material/styles'
 
+export const statusColors = {
+  todo: '#f5f2fa',
+  running: '#eff5ff',
+  done: '#edf7f1',
+  waitingBackground: '#fff9eb',
+  waitingBorder: '#b88627',
+  waitingText: '#8a5600',
+  waitingBadge: '#ffe5ae',
+}
+
 export const theme = createTheme({
   palette: {
     primary: { main: '#0866ff' },

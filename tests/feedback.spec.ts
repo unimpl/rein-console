@@ -114,6 +114,7 @@ test('provider avatars and isolated Agent settings work across all four categori
     ).toHaveAttribute('src', `/providers/${provider}.svg`)
   await page.getByRole('button', { name: 'Sam设置', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Agent 设置 · Sam' })
+  await dialog.getByRole('button', { name: 'A2A 配置', exact: true }).click()
   await dialog.getByRole('textbox', { name: '服务地址', exact: true }).fill('not-an-address')
   await dialog.getByRole('textbox', { name: '服务地址', exact: true }).press('Tab')
   await expect(dialog.getByRole('alert')).toContainText('服务地址无效')
@@ -138,6 +139,7 @@ test('provider avatars and isolated Agent settings work across all four categori
   await dialog.getByRole('textbox', { name: '存储目录', exact: true }).press('Tab')
   await dialog.getByRole('button', { name: '关闭 Agent 设置', exact: true }).click()
   await page.getByRole('button', { name: 'Sam设置', exact: true }).click()
+  await dialog.getByRole('button', { name: 'A2A 配置', exact: true }).click()
   await expect(dialog.getByRole('textbox', { name: '服务地址', exact: true })).toHaveValue(
     'http://127.0.0.1:9090/a2a',
   )

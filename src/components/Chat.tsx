@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, InputBase, Menu, MenuItem, Paper } from '@mui/material'
+import { Button, ButtonBase, InputBase, Menu, MenuItem, Paper, Tooltip } from '@mui/material'
 import type { AppData, ChatScope } from '../types'
 import { reinService } from '../services/reinService'
 import { Action, AgentAvatar, Icon } from './shared'
@@ -25,6 +25,20 @@ export function Chat({ data, scope, onTask, onMembers, notify, sendMode, userNam
   const fileRef = useRef<HTMLInputElement>(null)
   const [attachment, setAttachment] = useState('')
   const [sending, setSending] = useState(false)
+  function mention(name: string) {
+    const input = inputRef.current
+    const start = input?.selectionStart ?? draft.length
+    const end = input?.selectionEnd ?? start
+    const before = draft.slice(0, start)
+    const after = draft.slice(end)
+    const token = `${before && !/\s$/.test(before) ? ' ' : ''}@${name} `
+    setDraft(before + token + after)
+    setMemberAnchor(null)
+    requestAnimationFrame(() => {
+      inputRef.current?.focus()
+      inputRef.current?.setSelectionRange(start + token.length, start + token.length)
+    })
+  }
   useEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
@@ -59,7 +73,16 @@ export function Chat({ data, scope, onTask, onMembers, notify, sendMode, userNam
         {!selectedAgent && (
           <div className="header-members">
             {data.agents.map((agent) => (
-              <AgentAvatar key={agent.id} agent={agent} />
+              <Tooltip title={agent.name} key={agent.id}>
+                <ButtonBase
+                  className="header-member"
+                  aria-label={`提及 ${agent.name}`}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => mention(agent.name)}
+                >
+                  <AgentAvatar agent={agent} />
+                </ButtonBase>
+              </Tooltip>
             ))}
           </div>
         )}
@@ -98,7 +121,14 @@ export function Chat({ data, scope, onTask, onMembers, notify, sendMode, userNam
                   ) : (
                     <>
                       <strong>
-                        {agent?.name} · {agent?.role}
+                        <ButtonBase
+                          className="author-mention"
+                          aria-label={`提及 ${agent?.name}`}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => agent && mention(agent.name)}
+                        >
+                          {agent?.name} · {agent?.role}
+                        </ButtonBase>
                       </strong>
                       <time>{message.time}</time>
                     </>
@@ -107,17 +137,22 @@ export function Chat({ data, scope, onTask, onMembers, notify, sendMode, userNam
                 <div className="message-bubble-row">
                   <Paper
                     elevation={0}
-                    className={`message-bubble ${message.execution ? 'with-execution' : ''}`}
+                    className={`message-bubble ${message.execution ? 'with-execution' : ''} ${message.execution === 'waiting' ? 'waiting-message' : ''}`}
                   >
                     <span>{message.content}</span>
-                    {message.execution && (
-                      <span className={`message-state ${message.execution}`}>
-                        <Icon
-                          name={message.execution === 'waiting' ? 'chatWaiting' : 'chatSpinner'}
-                          size={message.execution === 'waiting' ? 14 : 12}
-                          spin={message.execution === 'executing'}
-                        />
-                        {message.execution === 'waiting' && '等待回复'}
+                    {message.execution === 'waiting' && (
+                      <ButtonBase
+                        className="message-state waiting"
+                        aria-label={`回复 ${agent?.name}`}
+                        onClick={() => agent && mention(agent.name)}
+                      >
+                        <Icon name="chatWaiting" size={14} />
+                        需要你回复
+                      </ButtonBase>
+                    )}
+                    {message.execution === 'executing' && (
+                      <span className="message-state executing" aria-label="Agent 正在执行">
+                        <Icon name="chatSpinner" size={12} spin />
                       </span>
                     )}
                   </Paper>
@@ -134,7 +169,9 @@ export function Chat({ data, scope, onTask, onMembers, notify, sendMode, userNam
                             <span>{task.id === 'T-24' ? '修复间歇 503' : task.title}</span>
                             <small>
                               {data.agents.find((a) => a.id === task.agentId)?.name}
-                              {task.reviewerId ? ' / Robin' : ''}
+                              {task.reviewerId
+                                ? ` / ${data.agents.find((a) => a.id === task.reviewerId)?.name ?? '待分配'}`
+                                : ''}
                             </small>
                           </button>
                         )
@@ -218,9 +255,7 @@ export function Chat({ data, scope, onTask, onMembers, notify, sendMode, userNam
           <MenuItem
             key={agent.id}
             onClick={() => {
-              setDraft(`${draft}@${agent.name} `)
-              setMemberAnchor(null)
-              inputRef.current?.focus()
+              mention(agent.name)
             }}
           >
             <AgentAvatar agent={agent} size={18} />

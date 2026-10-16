@@ -2,17 +2,22 @@ import type { Agent, AgentConfiguration } from '../types'
 
 // Mock adapter: configuration is isolated per Agent and never touches CLI, disk or network.
 const configurations = new Map<string, AgentConfiguration>()
-function defaults(agent: Agent): AgentConfiguration {
+function defaults(agent?: Agent): AgentConfiguration {
   return {
+    basic: {
+      name: agent?.name ?? '',
+      description: agent?.description ?? '',
+      provider: agent?.provider ?? 'codex',
+    },
     a2a: {
-      endpoint: `http://127.0.0.1:${agent.id === 'alex' ? 8080 : agent.id === 'sam' ? 8081 : 8082}/a2a`,
+      endpoint: `http://127.0.0.1:${agent?.id === 'alex' ? 8080 : agent?.id === 'sam' ? 8081 : 8082}/a2a`,
       cardPath: '/.well-known/agent-card.json',
       transport: 'JSON-RPC',
       timeout: 60,
       streaming: true,
     },
     local: {
-      executable: agent.provider === 'claude' ? 'claude' : agent.provider,
+      executable: agent?.provider ?? 'codex',
       workingDirectory: '~/projects',
       model: '跟随 CLI 配置',
       approval: '每次确认',
@@ -26,7 +31,7 @@ function defaults(agent: Agent): AgentConfiguration {
     },
     memory: {
       backend: '本地文件',
-      directory: `~/.rein/memory/${agent.id}`,
+      directory: `~/.rein/memory/${agent?.id ?? 'new-agent'}`,
       namespace: 'workspace-default',
       retentionDays: 30,
       autoSave: true,
@@ -34,11 +39,18 @@ function defaults(agent: Agent): AgentConfiguration {
   }
 }
 export const agentConfigService = {
-  async get(agent: Agent): Promise<AgentConfiguration> {
-    return structuredClone(configurations.get(agent.id) ?? defaults(agent))
+  async get(agent?: Agent): Promise<AgentConfiguration> {
+    return structuredClone((agent && configurations.get(agent.id)) || defaults(agent))
   },
   async save(agentId: string, value: AgentConfiguration) {
     const next = structuredClone(value)
+    next.basic.name = next.basic.name.trim()
+    next.basic.description = next.basic.description.trim()
+    if (!next.basic.name || next.basic.name.length > 80)
+      throw new Error('请填写 1–80 个字符的 Agent 名称。')
+    if (next.basic.description.length > 1000) throw new Error('Agent 描述不能超过 1000 个字符。')
+    if (!['claude', 'codex', 'pi'].includes(next.basic.provider))
+      throw new Error('请选择 Claude、Codex 或 pi。')
     let endpoint: URL
     try {
       endpoint = new URL(next.a2a.endpoint)

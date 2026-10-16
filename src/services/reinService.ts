@@ -1,4 +1,13 @@
-import type { AppData, ChatScope, Project, Requirement, Task, TaskStatus } from '../types'
+import type {
+  Agent,
+  AgentConfiguration,
+  AppData,
+  ChatScope,
+  Project,
+  Requirement,
+  Task,
+  TaskStatus,
+} from '../types'
 import { seed } from './seed'
 import { agentConfigService } from './agentConfigService'
 
@@ -143,6 +152,43 @@ export const reinService = {
     }
     publish()
     return structuredClone(requirement)
+  },
+  async saveAgent(value: AgentConfiguration, id?: string) {
+    const name = value.basic.name.trim()
+    if (
+      data.agents.some(
+        (agent) => agent.id !== id && agent.name.toLowerCase() === name.toLowerCase(),
+      )
+    )
+      throw new Error('已有同名 Agent，请使用其他名称。')
+    const existing = id ? data.agents.find((agent) => agent.id === id) : undefined
+    if (id && !existing) throw new Error('Agent 不存在，请重新选择。')
+    const agentId = id ?? crypto.randomUUID()
+    const config = await agentConfigService.save(agentId, value)
+    const agent: Agent = {
+      ...existing,
+      id: agentId,
+      name: config.basic.name,
+      description: config.basic.description,
+      provider: config.basic.provider,
+      cli: { claude: 'Claude Code', codex: 'Codex', pi: 'Pi' }[config.basic.provider],
+      role: existing?.role ?? '助手',
+      color: existing?.color ?? '#0866ff',
+      online: existing?.online ?? false,
+    }
+    if (existing) data.agents = data.agents.map((a) => (a.id === id ? agent : a))
+    else {
+      data.agents.push(agent)
+      data.messages.push({
+        id: crypto.randomUUID(),
+        scopeId: `agent-${agentId}`,
+        authorId: agentId,
+        time: time(),
+        content: `你好，我是 ${agent.name}。这是模拟 Agent 对话，尚未连接真实 CLI。`,
+      })
+    }
+    publish()
+    return structuredClone(agent)
   },
   async exportData() {
     return JSON.stringify({ mode: 'mock', ...data }, null, 2)

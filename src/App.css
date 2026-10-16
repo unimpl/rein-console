@@ -184,7 +184,7 @@ textarea {
   gap: 8px;
   padding-top: 8px;
   min-height: 0;
-  flex: 0 1 auto;
+  flex: 1;
 }
 .navigation > .MuiListItemButton-root,
 .navigation > .nav-divider {
@@ -195,8 +195,7 @@ textarea {
   flex-direction: column;
   gap: 4px;
   min-height: 64px;
-  max-height: 384px;
-  flex: 0 1 auto;
+  flex: 1;
 }
 .project-section > .nav-label {
   flex: none;
@@ -206,7 +205,7 @@ textarea {
   flex-direction: column;
   gap: 4px;
   min-height: 0;
-  max-height: 352px;
+  flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -263,12 +262,20 @@ textarea {
 }
 .agent-roster {
   flex: none;
+  min-height: 0;
+  max-height: min(40vh, 244px);
+  overflow-y: auto;
   margin-top: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 .roster-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  flex: none;
+  background: #f7f8fa;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1689,17 +1696,21 @@ textarea {
   top: 3px;
 }
 .project-edit,
-.requirement-edit {
+.requirement-edit,
+.agent-settings-action {
   opacity: 0;
 }
 .project-row:hover .project-edit,
 .project-row:focus-within .project-edit,
 .requirement-row:hover .requirement-edit,
-.requirement-row:focus-within .requirement-edit {
+.requirement-row:focus-within .requirement-edit,
+.agent-roster-row:hover .agent-settings-action,
+.agent-roster-row:focus-within .agent-settings-action {
   opacity: 0.6;
 }
 .project-row .project-edit:focus-visible,
-.requirement-row .requirement-edit:focus-visible {
+.requirement-row .requirement-edit:focus-visible,
+.agent-roster-row .agent-settings-action:focus-visible {
   opacity: 1;
 }
 .project-children {
@@ -1884,7 +1895,8 @@ textarea {
 }
 @media (hover: none) {
   .project-edit,
-  .requirement-edit {
+  .requirement-edit,
+  .agent-settings-action {
     opacity: 0.5;
   }
 }
@@ -1928,6 +1940,72 @@ textarea {
 }
 .agent-config-error {
   margin-bottom: 8px;
+}
+.settings-status > .MuiButton-root {
+  margin-left: auto;
+  flex: none;
+}
+.header-member {
+  border-radius: 50%;
+  flex: none;
+}
+.header-member:hover {
+  background: #eaf2ff;
+}
+.author-mention {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  border-radius: 3px;
+}
+.author-mention:hover {
+  color: var(--primary);
+}
+.task-group-todo {
+  background: var(--task-todo);
+}
+.task-group-running {
+  background: var(--task-running);
+}
+.task-group-done {
+  background: var(--task-done);
+}
+.task-card.waiting-task,
+.message-bubble.waiting-message {
+  background: var(--waiting-bg) !important;
+  border: 1px solid var(--waiting-border);
+}
+.task-card.waiting-task.selected {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.needs-reply-badge {
+  color: var(--waiting-text);
+  background: var(--waiting-badge);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
+  margin-left: auto;
+}
+.task-card-meta .needs-reply-badge {
+  margin-right: 4px;
+}
+.waiting-task .task-state.waiting {
+  color: var(--waiting-text);
+  font-weight: 500;
+}
+.message-bubble .message-state.waiting {
+  background: var(--waiting-badge);
+  color: var(--waiting-text);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 12px;
+  line-height: 18px;
+}
+.message-state.waiting:hover {
+  box-shadow: inset 0 0 0 1px var(--waiting-border);
 }
 @media (max-width: 560px) {
   .agent-config-dialog .setting-control {

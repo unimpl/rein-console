@@ -47,6 +47,8 @@ const paths: Record<string, string> = {
   brand: 'login-MaterialLayers',
   save: 'settings-MaterialCheck',
   edit: 'material-edit',
+  project: 'material-project',
+  requirement: 'material-requirement',
 }
 export function Icon({
   name,

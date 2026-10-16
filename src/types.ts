@@ -26,8 +26,14 @@ export interface Agent {
   online: boolean
   cli: string
   provider: 'claude' | 'codex' | 'pi'
+  description?: string
 }
 export interface AgentConfiguration {
+  basic: {
+    name: string
+    description: string
+    provider: Agent['provider']
+  }
   a2a: {
     endpoint: string
     cardPath: string

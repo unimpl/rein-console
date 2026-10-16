@@ -55,7 +55,11 @@ export function TaskPanel({
       </header>
       <div className="task-groups">
         {(Object.keys(statusLabels) as TaskStatus[]).map((status) => (
-          <section key={status} className="task-group" aria-label={statusLabels[status]}>
+          <section
+            key={status}
+            className={`task-group task-group-${status}`}
+            aria-label={statusLabels[status]}
+          >
             <div className="group-header">
               <StatusDot status={status} />
               <h3>{statusLabels[status]}</h3>
@@ -79,11 +83,14 @@ export function TaskPanel({
                   return (
                     <Paper
                       variant="outlined"
-                      className={`task-card ${selectedId === task.id ? 'selected' : ''}`}
+                      className={`task-card ${selectedId === task.id ? 'selected' : ''} ${task.execution === 'waiting' ? 'waiting-task' : ''}`}
                       key={task.id}
                     >
                       <div className="task-card-meta">
                         <span>#{task.id}</span>
+                        {task.execution === 'waiting' && (
+                          <span className="needs-reply-badge">需你回复</span>
+                        )}
                         <Action
                           label={`${task.id}任务操作`}
                           onClick={(e) => setTaskMenu({ el: e.currentTarget, task })}
@@ -99,7 +106,9 @@ export function TaskPanel({
                           <AgentAvatar agent={agent} size={18} />
                           <span>
                             {agent?.name}
-                            {task.reviewerId ? ' / Robin' : ` · ${agent?.role}`}
+                            {task.reviewerId
+                              ? ` / ${data.agents.find((a) => a.id === task.reviewerId)?.name ?? '待分配'}`
+                              : ` · ${agent?.role}`}
                           </span>
                         </div>
                         <div className={`task-state ${task.execution}`}>
