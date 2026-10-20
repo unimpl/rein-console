@@ -100,6 +100,7 @@ test('detail starts at Todo title edge and supports independent drag, restore, l
     await open()
     await expect.poll(async () => (await paper.boundingBox())?.width).toBeCloseTo(360, 0)
     await expect(page.getByRole('button', { name: '关闭任务详情' })).toBeInViewport()
+    await page.getByRole('tab', { name: 'CLI', exact: true }).click()
     await expect(page.getByRole('button', { name: '接管输入' })).toBeInViewport()
     expect(
       await page.locator('.detail-tabs').evaluate((el) => el.scrollWidth <= el.clientWidth),
@@ -116,6 +117,7 @@ test('detail starts at Todo title edge and supports independent drag, restore, l
     })
     .toBe(true)
   await expect(page.getByRole('button', { name: '关闭任务详情' })).toBeInViewport()
+  await page.getByRole('tab', { name: 'CLI', exact: true }).click()
   await expect(page.getByRole('button', { name: '接管输入' })).toBeInViewport()
 })
 

@@ -128,7 +128,7 @@ components:
 
 **Creative North Star: "Compact white workspace"**
 
-Rein is a compact application for operating a workspace through scoped group conversations and Agent tasks. White work areas, a pale sidebar, gray task groups and small controls keep conversation, task status and execution output visible together. Typography and spacing serve scanning and frequent interaction.
+Rein is a compact application for operating a workspace through scoped group conversations and Agent tasks. White work areas, a pale sidebar, white task columns and small controls keep conversation, task status and execution output visible together. Typography and spacing serve scanning and frequent interaction.
 
 The visual authority is [Figma pzrgKXgJAyugcvBNC16Ick](https://www.figma.com/design/pzrgKXgJAyugcvBNC16Ick): main workspace `2:34`, task detail `2:35`, login `12:1111`, settings `12:1112`–`12:1116`, account menu `24:3887` and logout dialog `24:4369`. The implemented source of tokens is `src/theme.ts`; `src/App.css` and the components define layout and component details. Preserve these references when extending the application.
 
@@ -246,7 +246,7 @@ Header avatars show Agent names on hover and insert @mentions at the composer ca
 
 ### Terminal and task detail
 
-The task detail keeps a compact header, participant/status row, description, tabs and footer around its scrollable content. CLI output uses the terminal palette, mono typography and (16px) padding. Command input is separated by a terminal divider. Running indicators rotate once per second; reduced-motion preferences stop that rotation and reduce animation and transition durations. Activity, CLI and result tabs share the compact label hierarchy.
+The task detail keeps a compact header, participant/status row, description, tabs and footer around its scrollable content. CLI output uses the terminal palette, mono typography and (16px) padding. Command input is separated by a terminal divider. Running indicators rotate once per second; reduced-motion preferences stop that rotation and reduce animation and transition durations. Task, CLI and result tabs share the compact label hierarchy. Tasks is the default: a compact progress summary and collapsible Requirements, Design, Planning, Execution and Verification sections show step owners and completion. Dashed arrows in Todo connect only explicit task dependencies, rerouting through card gutters when cards move or columns stack. Filtering hides links whose endpoints are absent.
 
 ### Settings switches and dialogs
 
@@ -270,3 +270,5 @@ Switch artwork is (28px × 16px), placed within a (32px) square interactive targ
 - **Don't** force equal viewport-distributed heights onto the stacked task groups.
 - **Don't** stretch native SVG icons or replace them with a different icon family.
 - **Don't** turn task detail into a change to the stored conversation/task split.
+
+Todo columns now share the white canvas, with 1px neutral separators. Cards use an almost-white surface; selection and waiting retain semantic accents. Non-active tasks can be dragged within or between columns, with a blue insertion indicator. Executing and waiting Agent sessions lock movement in both the UI and service. The detail drawer closes on an outside pointer action, except portaled dialogs and menus. Completed Spec steps retain normal text and a green completion icon. The result tab uses an execution summary and four independently collapsible artifact sections.

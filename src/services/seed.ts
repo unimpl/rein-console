@@ -1,4 +1,5 @@
 import type { AppData, Task, TerminalLine } from '../types'
+import { createSpecPhases } from './spec'
 
 const task = (
   id: string,
@@ -17,6 +18,14 @@ const task = (
   statusText,
   description,
   requirementId: 'gateway',
+  dependsOn:
+    (
+      { 'T-20': ['T-24'], 'T-21': ['T-22'], 'T-24': ['T-18'], 'T-22': ['T-19'] } as Record<
+        string,
+        string[]
+      >
+    )[id] ?? [],
+  specPhases: createSpecPhases(title, status),
   ...(id === 'T-24' ? { reviewerId: 'robin' } : {}),
 })
 const tasks: Task[] = [
@@ -156,7 +165,8 @@ export const seed: AppData = {
       scopeId: 'gateway',
       authorId: 'alex',
       time: '14:21',
-      content: '已拆成并行任务。修复完成后进入复核，认证检查同时进行。',
+      content:
+        '已拆解任务并明确依赖：超时测试 → 修复 503 → 优化健康检查；更新依赖 → 完善日志 → 清理缓存。认证检查可并行进行。',
       taskIds: ['T-24', 'T-25'],
     },
     {

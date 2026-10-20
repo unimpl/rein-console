@@ -59,7 +59,7 @@ export default function App() {
   const [loggedIn, setLoggedIn] = useState(true)
   const [preferences, setPreferences] = useState(preferencesService.load)
   const [notice, setNotice] = useState('')
-  const [info, setInfo] = useState<'flow' | 'help' | 'profile' | 'members' | null>(null)
+  const [info, setInfo] = useState<'help' | 'profile' | 'members' | null>(null)
   const [userName, setUserName] = useState('Haibin')
   const [nameDraft, setNameDraft] = useState('Haibin')
   const [createStatus, setCreateStatus] = useState<TaskStatus | null>(null)
@@ -314,18 +314,17 @@ export default function App() {
               scope={scope}
               selectedId={selectedTask ?? lastTaskId}
               onTask={showTask}
-              onFlow={() => setInfo('flow')}
               onCreate={(status) => {
                 setCreateStatus(status)
                 setTaskTitle('')
               }}
-              onStatus={changeTaskStatus}
               notify={notify}
             />
           )}
         </div>
       </main>
       <TaskDetails
+        onTask={setSelectedTask}
         key={selectedTask ?? 'closed'}
         data={data}
         task={data.tasks.find((t) => t.id === selectedTask)}
@@ -456,26 +455,10 @@ export default function App() {
       </Dialog>
       <Dialog open={!!info} onClose={() => setInfo(null)} fullWidth maxWidth="sm">
         <DialogTitle className="dialog-title">
-          {info === 'flow'
-            ? '任务流'
-            : info === 'profile'
-              ? '个人'
-              : info === 'members'
-                ? '群聊成员'
-                : '帮助'}
+          {info === 'profile' ? '个人' : info === 'members' ? '群聊成员' : '帮助'}
           <Action label="关闭对话框" icon="close" onClick={() => setInfo(null)} />
         </DialogTitle>
         <DialogContent>
-          {info === 'flow' && (
-            <div className="placeholder-state">
-              <Icon name="flow" />
-              <h3>任务流画布待实现</h3>
-              <p>Figma 尚未提供此界面的完整设计。当前保留入口，后续按正式设计接入。</p>
-              <Button variant="outlined" onClick={() => setInfo(null)}>
-                返回工作空间
-              </Button>
-            </div>
-          )}
           {info === 'members' &&
             data.agents.map((a) => (
               <div className="member-row" key={a.id}>

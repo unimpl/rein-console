@@ -119,9 +119,9 @@ test('waiting tasks and messages have explicit readable emphasis and update with
 }) => {
   await page.goto('/')
   for (const [status, color] of [
-    ['待开始', 'rgb(245, 242, 250)'],
-    ['进行中', 'rgb(239, 245, 255)'],
-    ['已完成', 'rgb(237, 247, 241)'],
+    ['待开始', 'rgb(255, 255, 255)'],
+    ['进行中', 'rgb(255, 255, 255)'],
+    ['已完成', 'rgb(255, 255, 255)'],
   ])
     await expect(
       page
@@ -138,7 +138,10 @@ test('waiting tasks and messages have explicit readable emphasis and update with
     '需要你回复',
   )
   await page.getByRole('button', { name: 'T-25任务操作', exact: true }).click()
-  await page.getByRole('menuitem', { name: '移至已完成', exact: true }).click()
+  await expect(page.getByRole('menuitem', { name: '移至已完成', exact: true })).toBeDisabled()
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: '打开任务 检查认证配置', exact: true }).click()
+  await page.getByRole('button', { name: '停止任务', exact: true }).click()
   await expect(waitingCard).not.toHaveClass(/waiting-task/)
   await expect(waitingCard.locator('.needs-reply-badge')).toHaveCount(0)
 })

@@ -62,12 +62,19 @@ export interface AgentConfiguration {
     autoSave: boolean
   }
 }
+export type SpecPhaseName = 'Requirements' | 'Design' | 'Planning' | 'Execution' | 'Verification'
+export interface SpecPhase {
+  name: SpecPhaseName
+  steps: { id: string; title: string; owner: string; completed: boolean }[]
+}
 export interface Task {
   id: string
   title: string
   requirementId: string
   agentId: string
   reviewerId?: string
+  dependsOn?: string[]
+  specPhases?: SpecPhase[]
   status: TaskStatus
   execution: ExecutionState
   statusText: string

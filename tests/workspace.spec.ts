@@ -28,18 +28,19 @@ test('scoped messages, task states, overlay details and resizable panes', async 
     .poll(async () => (await page.locator('.task-detail').boundingBox())?.width)
     .toBeGreaterThan(1200)
   await page.getByRole('button', { name: '恢复抽屉宽度' }).click()
+  await page.getByRole('tab', { name: 'CLI', exact: true }).click()
   await page.getByRole('button', { name: '接管输入' }).click()
   await page.getByRole('textbox', { name: '模拟终端命令' }).fill('npm test')
   await page.getByRole('textbox', { name: '模拟终端命令' }).press('Enter')
   await expect(page.getByText('模拟终端已接收输入；未执行真实命令。')).toBeVisible()
-  await page.getByRole('tab', { name: '活动', exact: true }).click()
+  await page.getByRole('tab', { name: '任务', exact: true }).click()
   await expect(page.getByText('用户向 sam 发送模拟输入')).toBeVisible()
   await page.getByRole('button', { name: '查看会话记录' }).click()
   await expect(page.getByRole('dialog')).toContainText('T-24-sam')
   await page.getByRole('button', { name: '关闭会话记录' }).click()
   await page.getByRole('tab', { name: '结果', exact: true }).click()
   await page.getByRole('button', { name: '模拟完成任务' }).click()
-  await expect(page.locator('.result-panel')).toContainText('任务已完成')
+  await expect(page.locator('.task-results')).toContainText('已完成')
   await page.getByRole('button', { name: '关闭任务详情' }).click()
   await expect(
     page
@@ -102,7 +103,7 @@ test('settings persist, account menu stays usable with details, logout confirms 
   await page.getByRole('button', { name: '保存模拟配置' }).click()
   await expect(page.getByText('演示 Provider', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '关闭配置' }).click()
-  await page.getByRole('button', { name: '关闭任务详情' }).click()
+  await expect(page.getByRole('region', { name: '任务详情' })).toHaveCount(0)
   await page.reload()
   expect(
     await page.evaluate(() => JSON.parse(localStorage.getItem('rein.preferences')!)),
@@ -157,6 +158,7 @@ test('narrow windows keep task controls, navigation, drawer and configuration ac
   await page.setViewportSize({ width: 390, height: 844 })
   await page.getByRole('button', { name: '打开任务 修复网关间歇 503', exact: true }).click()
   await expect(page.getByRole('button', { name: '关闭任务详情' })).toBeInViewport()
+  await page.getByRole('tab', { name: 'CLI', exact: true }).click()
   await expect(page.getByRole('button', { name: '接管输入' })).toBeInViewport()
   await page.getByRole('button', { name: '接管输入' }).click()
   await expect(page.getByRole('textbox', { name: '模拟终端命令' })).toBeInViewport()

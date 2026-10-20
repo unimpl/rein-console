@@ -15,6 +15,8 @@ import type { AppData, Task, TaskStatus } from '../types'
 import { reinService } from '../services/reinService'
 import { Action, AgentAvatar, Icon, StateIcon } from './shared'
 import { statusLabels } from '../constants'
+import { SpecProgress } from './SpecProgress'
+import { TaskResults } from './TaskResults'
 
 interface Props {
   data: AppData
@@ -26,6 +28,7 @@ interface Props {
   availableLeft: number
   onExpand: () => void
   onClose: () => void
+  onTask: (id: string) => void
   onStatus: (task: Task, status: TaskStatus) => void
   notify: (message: string) => void
 }
@@ -39,10 +42,11 @@ export function TaskDetails({
   availableLeft,
   onExpand,
   onClose,
+  onTask,
   onStatus,
   notify,
 }: Props) {
-  const [tab, setTab] = useState(1)
+  const [tab, setTab] = useState(0)
   const [agentId, setAgentId] = useState(task?.agentId ?? 'sam')
   const [takeover, setTakeover] = useState(false)
   const [command, setCommand] = useState('')
@@ -73,6 +77,17 @@ export function TaskDetails({
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
   }, [onClose])
+  useEffect(() => {
+    if (!task) return
+    const outside = (event: PointerEvent) => {
+      const target = event.target
+      if (!(target instanceof Element) || detailRef.current?.contains(target)) return
+      if (target.closest('.MuiDialog-root, .MuiPopover-root, .MuiMenu-root')) return
+      onClose()
+    }
+    document.addEventListener('pointerdown', outside)
+    return () => document.removeEventListener('pointerdown', outside)
+  }, [task, onClose])
   const session = data.sessions.find((s) => s.taskId === task?.id && s.agentId === agentId)
   useEffect(() => {
     if (terminalRef.current) terminalRef.current.scrollTop = terminalRef.current.scrollHeight
@@ -185,39 +200,43 @@ export function TaskDetails({
               onChange={(_, value: number) => setTab(value)}
               aria-label="任务详情页签"
             >
-              <Tab label="活动" id="detail-tab-0" aria-controls="detail-panel-0" />
+              <Tab label="任务" id="detail-tab-0" aria-controls="detail-panel-0" />
               <Tab label="CLI" id="detail-tab-1" aria-controls="detail-panel-1" />
               <Tab label="结果" id="detail-tab-2" aria-controls="detail-panel-2" />
             </Tabs>
             <span className="spacer" />
-            <Select
-              className="agent-select"
-              size="small"
-              value={agentId}
-              onChange={(e) => {
-                setAgentId(e.target.value)
-                setTakeover(false)
-              }}
-              inputProps={{ 'aria-label': '切换 Agent 会话' }}
-            >
-              {data.agents.map((a) => (
-                <MenuItem value={a.id} key={a.id}>
-                  {a.name}
-                </MenuItem>
-              ))}
-            </Select>
-            <Button
-              variant="outlined"
-              startIcon={<Icon name="keyboard" />}
-              onClick={() => {
-                setTab(1)
-                setTakeover(!takeover)
-                notify(takeover ? '已恢复只读模式' : '已接管模拟终端输入；不会执行真实命令')
-              }}
-              disabled={task.status !== 'running' || task.execution === 'stopped'}
-            >
-              {takeover ? '释放输入' : '接管输入'}
-            </Button>
+            {tab === 1 && (
+              <>
+                <Select
+                  className="agent-select"
+                  size="small"
+                  value={agentId}
+                  onChange={(e) => {
+                    setAgentId(e.target.value)
+                    setTakeover(false)
+                  }}
+                  inputProps={{ 'aria-label': '切换 Agent 会话' }}
+                >
+                  {data.agents.map((a) => (
+                    <MenuItem value={a.id} key={a.id}>
+                      {a.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <Button
+                  variant="outlined"
+                  startIcon={<Icon name="keyboard" />}
+                  onClick={() => {
+                    setTab(1)
+                    setTakeover(!takeover)
+                    notify(takeover ? '已恢复只读模式' : '已接管模拟终端输入；不会执行真实命令')
+                  }}
+                  disabled={task.status !== 'running' || task.execution === 'stopped'}
+                >
+                  {takeover ? '释放输入' : '接管输入'}
+                </Button>
+              </>
+            )}
           </div>
           <div
             className="detail-body"
@@ -273,6 +292,8 @@ export function TaskDetails({
             )}
             {tab === 0 && (
               <div className="activity-list">
+                <SpecProgress task={task} tasks={data.tasks} onTask={onTask} />
+                <h3 className="activity-log-heading">执行记录</h3>
                 {session?.activities.map((item, i) => (
                   <div className="activity-row" key={i}>
                     <span className="activity-dot" />
@@ -283,34 +304,18 @@ export function TaskDetails({
                 <p className="muted">活动由前端模拟数据生成。</p>
               </div>
             )}
-            {tab === 2 && (
-              <div className="result-panel">
-                <Icon name={task.status === 'done' ? 'check' : 'clock'} />
-                <h3>{task.status === 'done' ? '任务已完成' : '暂无最终结果'}</h3>
-                <p>
-                  {task.status === 'done'
-                    ? `${task.title}的模拟验证已通过。后续可在此展示真实产物、变更文件和测试报告。`
-                    : '任务完成后将在此展示结果与产物。'}
-                </p>
-                {task.status === 'running' && (
-                  <Button variant="outlined" onClick={() => onStatus(task, 'done')}>
-                    模拟完成任务
-                  </Button>
-                )}
-                {task.status === 'todo' && (
-                  <Button variant="outlined" onClick={() => onStatus(task, 'running')}>
-                    模拟开始任务
-                  </Button>
-                )}
-              </div>
-            )}
+            {tab === 2 && <TaskResults task={task} onStatus={onStatus} />}
           </div>
           <footer className="detail-footer">
             <div className="readonly-status">
               <Icon name="info" size={13} />
               <span>
-                {takeover ? '已接管输入' : '当前只读 · 接管后可直接交互'}
-                <span className="simulation-label"> · 模拟终端</span>
+                {tab === 1
+                  ? takeover
+                    ? '已接管输入'
+                    : '当前只读 · 接管后可直接交互'
+                  : '步骤进度随 Agent 执行状态更新'}
+                <span className="simulation-label"> · {tab === 1 ? '模拟终端' : '模拟数据'}</span>
               </span>
             </div>
             <div className="detail-controls">

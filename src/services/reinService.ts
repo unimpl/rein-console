@@ -9,6 +9,7 @@ import type {
   TaskStatus,
 } from '../types'
 import { seed } from './seed'
+import { createSpecPhases } from './spec'
 import { agentConfigService } from './agentConfigService'
 
 // Replace this adapter with HTTP/WebSocket calls when a backend is available.
@@ -17,6 +18,9 @@ const subscribers = new Set<(data: AppData) => void>()
 const time = () => new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
 function publish() {
   subscribers.forEach((fn) => fn(structuredClone(data)))
+}
+export function taskHasActiveAgent(task: Task) {
+  return task.execution === 'executing' || task.execution === 'waiting'
 }
 export const reinService = {
   async getData() {
@@ -56,13 +60,64 @@ export const reinService = {
     }, 650)
   },
   async updateTask(id: string, patch: Partial<Pick<Task, 'status' | 'execution' | 'statusText'>>) {
-    data.tasks = data.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t))
+    data.tasks = data.tasks.map((t) =>
+      t.id === id
+        ? {
+            ...t,
+            ...patch,
+            specPhases:
+              patch.status === 'done'
+                ? t.specPhases?.map((phase) => ({
+                    ...phase,
+                    steps: phase.steps.map((step) => ({ ...step, completed: true })),
+                  }))
+                : t.specPhases,
+          }
+        : t,
+    )
     data.sessions
       .filter((s) => s.taskId === id)
       .forEach((s) => {
         s.activities.push({ time: time(), text: patch.statusText ?? '任务状态已更新' })
         s.lines.push({ text: `> ${patch.statusText ?? '任务状态已更新'}（模拟）`, tone: 'muted' })
       })
+    publish()
+  },
+  async moveTask(id: string, status: TaskStatus, beforeId?: string) {
+    const task = data.tasks.find((t) => t.id === id)
+    if (!task) throw new Error('任务不存在。')
+    if (taskHasActiveAgent(task)) throw new Error('Agent 会话仍在运行，请先停止任务再移动。')
+    if (beforeId === id) return
+    const before = beforeId ? data.tasks.find((t) => t.id === beforeId) : undefined
+    if (beforeId && (!before || before.status !== status))
+      throw new Error('目标位置已变化，请重试。')
+    const changed = task.status !== status
+    const next: Task = changed
+      ? {
+          ...task,
+          status,
+          execution: status === 'done' ? 'completed' : 'queued',
+          statusText: status === 'done' ? '已完成' : '待执行',
+          specPhases:
+            status === 'done'
+              ? task.specPhases?.map((p) => ({
+                  ...p,
+                  steps: p.steps.map((step) => ({ ...step, completed: true })),
+                }))
+              : task.specPhases,
+        }
+      : task
+    const remaining = data.tasks.filter((t) => t.id !== id)
+    const index = beforeId ? remaining.findIndex((t) => t.id === beforeId) : -1
+    if (index >= 0) remaining.splice(index, 0, next)
+    else {
+      const last = remaining.reduce(
+        (last, t, i) => (t.status === status && t.requirementId === task.requirementId ? i : last),
+        -1,
+      )
+      remaining.splice(last < 0 ? remaining.length : last + 1, 0, next)
+    }
+    data.tasks = remaining
     publish()
   },
   async command(taskId: string, agentId: string, command: string) {
@@ -86,6 +141,8 @@ export const reinService = {
       execution: status === 'todo' ? 'queued' : status === 'running' ? 'executing' : 'completed',
       statusText: status === 'todo' ? '待执行' : status === 'running' ? '执行中' : '已完成',
       description: title,
+      dependsOn: [],
+      specPhases: createSpecPhases(title, status),
     })
     data.sessions.push({
       id: `${id}-sam`,

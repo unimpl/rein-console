@@ -1,9 +1,9 @@
 import { createTheme } from '@mui/material/styles'
 
 export const statusColors = {
-  todo: '#f5f2fa',
-  running: '#eff5ff',
-  done: '#edf7f1',
+  todo: '#fff',
+  running: '#fff',
+  done: '#fff',
   waitingBackground: '#fff9eb',
   waitingBorder: '#b88627',
   waitingText: '#8a5600',
