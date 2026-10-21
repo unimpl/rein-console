@@ -50,7 +50,7 @@ export function Sidebar({
           <span>{data.workspace.name}</span>
           <Icon name="down" />
         </button>
-        <Action label="收起侧栏" icon="collapse" onClick={onHide} />
+        <Action label="收起侧栏" icon="collapse" className="sidebar-toggle" onClick={onHide} />
       </div>
       <div className="sidebar-scroll">
         <OutlinedInput
@@ -303,7 +303,7 @@ export function SidebarRail({
   ]
   return (
     <aside className="sidebar-rail" aria-label="窄侧栏">
-      <Action label="展开侧栏" icon="collapse" onClick={onHide} />
+      <Action label="展开侧栏" icon="collapse" className="sidebar-toggle" onClick={onHide} />
       <nav aria-label="快捷对话">
         {actions.map((item) => (
           <Tooltip key={item.label} title={`${item.label} · ${item.title}`} placement="right">

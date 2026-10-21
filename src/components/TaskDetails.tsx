@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   Button,
   Dialog,
@@ -53,14 +53,26 @@ export function TaskDetails({
   const [history, setHistory] = useState(false)
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth)
   const [resizing, setResizing] = useState(false)
+  const [dockedToSidebar, setDockedToSidebar] = useState(false)
   const maximumWidth = Math.max(0, viewportWidth - availableLeft)
   const preferredWidth = widthRatio === null ? defaultWidth : widthRatio * viewportWidth
   // Clamp only the rendered size: a smaller window must not overwrite the saved ratio.
-  const normalWidth = Math.max(Math.min(260, maximumWidth), Math.min(preferredWidth, maximumWidth))
+  const normalWidth = dockedToSidebar
+    ? maximumWidth
+    : Math.max(Math.min(260, maximumWidth), Math.min(preferredWidth, maximumWidth))
   const minimumWidth = Math.min(360, defaultWidth, normalWidth, maximumWidth)
   const renderedWidth = expanded ? maximumWidth : normalWidth
+  const previousLayout = useRef({ availableLeft, viewportWidth, maximumWidth, normalWidth })
   const terminalRef = useRef<HTMLDivElement>(null)
   const detailRef = useRef<HTMLElement>(null)
+  useLayoutEffect(() => {
+    const previous = previousLayout.current
+    // Follow a sidebar toggle only when the normal detail edge was already touching it.
+    // Responsive viewport constraints alone must not replace the user's preferred width.
+    if (previous.availableLeft !== availableLeft && previous.viewportWidth === viewportWidth)
+      setDockedToSidebar(Math.abs(previous.normalWidth - previous.maximumWidth) < 1)
+    previousLayout.current = { availableLeft, viewportWidth, maximumWidth, normalWidth }
+  }, [availableLeft, viewportWidth, maximumWidth, normalWidth])
   useEffect(() => {
     detailRef.current?.focus()
   }, [])
@@ -83,6 +95,7 @@ export function TaskDetails({
       const target = event.target
       if (!(target instanceof Element) || detailRef.current?.contains(target)) return
       if (target.closest('.MuiDialog-root, .MuiPopover-root, .MuiMenu-root')) return
+      if (target.closest('.sidebar-toggle')) return
       onClose()
     }
     document.addEventListener('pointerdown', outside)
@@ -98,6 +111,7 @@ export function TaskDetails({
   const canInput = takeover && task.status === 'running' && task.execution !== 'stopped'
   function resize(nextWidth: number) {
     const next = Math.max(minimumWidth, Math.min(maximumWidth, nextWidth))
+    setDockedToSidebar(false)
     onWidthRatioChange(next / viewportWidth)
     if (expanded) onExpand()
   }
