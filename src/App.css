@@ -2385,3 +2385,135 @@ textarea {
   color: var(--secondary);
   margin: 12px 0 20px;
 }
+
+/* Hub 执行沿用现有紧凑聊天布局。 */
+.hub-session-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-bottom: 1px solid #e5e8ef;
+  color: #596273;
+}
+.hub-session-bar select {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #e5e8ef;
+  border-radius: 6px;
+  background: #fff;
+  color: #202632;
+  font: inherit;
+}
+.hub-alert {
+  margin: 8px 16px 0;
+}
+.hub-run-status {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #596273;
+  font-size: 12px;
+}
+.hub-state-label,
+.hub-placeholder,
+.hub-connection-note {
+  color: #596273;
+  font-size: 12px;
+}
+.hub-tool,
+.hub-reasoning,
+.hub-run-reference {
+  margin-top: 8px;
+  max-width: 100%;
+  border: 1px solid #e5e8ef;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fff;
+}
+.hub-tool summary,
+.hub-reasoning summary,
+.hub-run-reference summary {
+  cursor: pointer;
+  font-size: 12px;
+}
+.hub-tool pre,
+.hub-run-reference dd {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}
+.hub-reasoning p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #596273;
+}
+.hub-run-reference {
+  color: #596273;
+  border: 0;
+  padding-left: 0;
+}
+.hub-run-reference dl {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 6px;
+}
+.hub-run-reference dd {
+  margin: 0;
+}
+.hub-interaction {
+  margin-top: 10px;
+  padding: 12px;
+  background: #fff9eb !important;
+  border-color: #b88627 !important;
+}
+.hub-interaction h3 {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 0 8px;
+}
+.hub-interaction form {
+  display: grid;
+  gap: 12px;
+}
+.hub-interaction-actions {
+  display: flex;
+  gap: 8px;
+}
+.hub-interaction select {
+  width: 100%;
+  font: inherit;
+  padding: 6px;
+}
+.hub-roster-error,
+.hub-roster-empty {
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #596273;
+  overflow-wrap: anywhere;
+}
+.hub-roster-error {
+  color: #b3261e;
+}
+.hub-roster-error button {
+  display: block;
+  margin-top: 6px;
+  border: 0;
+  color: #0866ff;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+@media (max-width: 599px) {
+  .hub-session-bar {
+    padding-inline: 12px;
+  }
+  .hub-interaction .MuiInputBase-input {
+    font-size: 16px;
+  }
+}

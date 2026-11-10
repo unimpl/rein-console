@@ -80,7 +80,9 @@ function ConfigSelect({
       {options.map((option) => (
         <option key={option} value={option}>
           {label === 'Agent 类型'
-            ? { claude: 'Claude Code', codex: 'Codex', pi: 'pi' }[option as Agent['provider']]
+            ? { claude: 'Claude Code', codex: 'Codex', pi: 'pi', a2a: 'A2A' }[
+                option as Agent['provider']
+              ]
             : option}
         </option>
       ))}
@@ -246,7 +248,11 @@ export function AgentSettings({
           <span className="spacer" />
           <small>
             {creating ? '新建' : value?.basic.name || agent.name} ·{' '}
-            {value ? { claude: 'Claude Code', codex: 'Codex', pi: 'Pi' }[value.basic.provider] : ''}
+            {value
+              ? { claude: 'Claude Code', codex: 'Codex', pi: 'Pi', a2a: 'A2A' }[
+                  value.basic.provider
+                ]
+              : ''}
           </small>
         </nav>
         <section className="settings-content" aria-label={categories[category].name}>

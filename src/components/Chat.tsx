@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, ButtonBase, InputBase, Menu, MenuItem, Paper, Tooltip } from '@mui/material'
 import type { AppData, ChatScope } from '../types'
 import { reinService } from '../services/reinService'
+import { HubAgentChat } from './HubAgentChat'
+import type { HubAgent } from '../services/hubService'
 import { Action, AgentAvatar, Icon } from './shared'
 
 interface Props {
@@ -53,11 +55,22 @@ export function Chat({ data, scope, onTask, onMembers, notify, sendMode, userNam
       )
       setDraft('')
       setAttachment('')
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '发送失败，请重试。')
     } finally {
       setSending(false)
       inputRef.current?.focus()
     }
   }
+  if (selectedAgent?.hubManaged)
+    return (
+      <HubAgentChat
+        key={selectedAgent.id}
+        agent={selectedAgent as HubAgent}
+        userName={userName}
+        sendMode={sendMode}
+      />
+    )
   return (
     <section className="chat-panel" aria-label="群聊">
       <header className="panel-header chat-header">

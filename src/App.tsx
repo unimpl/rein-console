@@ -200,7 +200,10 @@ export default function App() {
     onProject: (project?: Project) => setEntityEditor({ kind: 'project', project }),
     onRequirement: (projectId: string, requirement?: Requirement) =>
       setEntityEditor({ kind: 'requirement', projectId, requirement }),
-    onAgentSettings: (agent: Agent) => setConfiguredAgent(agent),
+    onAgentSettings: (agent: Agent) =>
+      agent.hubManaged
+        ? setNotice('此 Agent 由 daemon 注册，请使用 rein register agent 更新配置。')
+        : setConfiguredAgent(agent),
     onCreateAgent: () => setConfiguredAgent('new'),
   }
   const selectedAgent = data.agents.find((agent) => agent.id === scope.agentId)

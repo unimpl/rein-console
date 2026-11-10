@@ -3,6 +3,9 @@ import { Divider, IconButton, ListItemButton, OutlinedInput, Tooltip } from '@mu
 import type { Agent, AppData, ChatScope, Project, Requirement } from '../types'
 import { Action, AgentAvatar, Icon, StatusDot } from './shared'
 
+import { demoMode } from '../services/hubService'
+import { reinService } from '../services/reinService'
+
 interface Props {
   data: AppData
   scope: ChatScope
@@ -193,12 +196,37 @@ export function Sidebar({
             <div className="roster-header">
               <span>Agents</span>
               <Action
-                label="新建 Agent"
-                icon="plus"
+                label={demoMode ? '新建 Agent' : '刷新 Agent 列表'}
+                icon={demoMode ? 'plus' : 'flow'}
                 className="quiet-action"
-                onClick={onCreateAgent}
+                onClick={
+                  demoMode
+                    ? onCreateAgent
+                    : () => {
+                        void reinService.refreshAgents()
+                      }
+                }
               />
             </div>
+            {data.agentError && (
+              <p className="hub-roster-error" role="alert">
+                无法读取 Agent：{data.agentError}
+                <button
+                  onClick={() => {
+                    void reinService.refreshAgents()
+                  }}
+                >
+                  重试连接
+                </button>
+              </p>
+            )}
+            {!demoMode && !data.agents.length && !data.agentError && (
+              <p className="hub-roster-empty">
+                {data.agentLoading
+                  ? '正在读取 Agent…'
+                  : '暂无 Agent。请使用 rein register agent 在终端注册。'}
+              </p>
+            )}
             {data.agents.map((agent) => (
               <div className="agent-roster-row" key={agent.id}>
                 <ListItemButton

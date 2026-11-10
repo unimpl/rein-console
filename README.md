@@ -76,3 +76,16 @@ PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/Ma
 测试覆盖上下文隔离、消息发送、任务状态、Drawer 覆盖/展开、模拟终端、会话记录、分栏持久化、侧栏、配置编辑、退出确认、登录及窄屏交互。截图证据保存在本机 `.impeccable/review/`（不纳入 Git）。
 
 Todo 任务可在栏内拖拽排序、跨栏改变状态；运行中或等待回复的 Agent 会话占用任务时禁止移动，需先停止。菜单也提供上移、下移与跨栏操作。拖动进入进行中只改变状态，不自动启动 Agent。任务详情支持点击外部关闭，结果页按文档、设计、代码与测试分组展示示意产物。
+
+## 连接真实 Agent
+
+默认打开页面即从 `/api/agents` 读取 Hub 列表，Agent 对话通过 Hub → gRPC/TLS → reind → Native/A2A Backend 执行。开发代理默认为 `http://127.0.0.1:9010`，可设置 `REIN_HUB_HTTP`。需要先启动 Hub、daemon，并用 `rein register agent codex|pi|a2a` 注册。
+
+[启动、注册及验证步骤](../reinsman/rein/docs/console-integration.md)。面板支持会话续接、执行事件、审批/表单、取消、离线和错误状态。普通操作使用 HTTP，Run 实时更新使用 SSE。静态部署需要同源 `/api` 反向代理，并关闭 SSE 缓冲、允许长连接。
+
+页面打开或切换会话，通过 HTTP 获取最近 20 轮及其事件；上滚或点击“加载更早记录”按稳定游标获取更早历史，并保持阅读位置。随后使用一个 Agent SSE 连接接收状态、输出、审批请求和控制回执，不定时拉取 Run 列表。隐藏页面时关闭 SSE，返回前台后从上次提交游标续接。断线采用 Last-Event-ID 重放增量，客户端按 Run / attempt / sequence 去重；历史与实时更新用版本号合并。Agent 侧栏列表仍通过独立 HTTP 刷新机制获取。
+
+前端演示需显式 `VITE_REIN_MODE=demo npm run dev`。默认模式不会用 mock Agent 或模拟回复回退。
+
+- `npm run test:e2e`：原有演示 UI 回归，使用 5175 端口。
+- `npm run test:hub`：真实 Hub/daemon/独立 A2A 服务的浏览器集成测试，使用 5174、19010–19012 和临时状态目录；需按上面文档先编译三个后端二进制。

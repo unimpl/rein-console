@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "test:e2e": "playwright test",
-    "format": "prettier --write src tests playwright.config.ts"
+    "format": "prettier --write src tests playwright.config.ts",
+    "test:hub": "playwright test --config playwright.hub.config.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

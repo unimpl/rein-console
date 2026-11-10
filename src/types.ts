@@ -25,7 +25,8 @@ export interface Agent {
   color: string
   online: boolean
   cli: string
-  provider: 'claude' | 'codex' | 'pi'
+  provider: 'claude' | 'codex' | 'pi' | 'a2a'
+  hubManaged?: boolean
   description?: string
 }
 export interface AgentConfiguration {
@@ -111,6 +112,8 @@ export interface ChatScope {
   status?: TaskStatus
 }
 export interface AppData {
+  agentLoading?: boolean
+  agentError?: string
   workspace: Workspace
   projects: Project[]
   requirements: Requirement[]

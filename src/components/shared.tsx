@@ -101,7 +101,13 @@ export function Action({
 export function AgentAvatar({ agent, size = 22 }: { agent?: Agent; size?: number }) {
   return (
     <Avatar
-      src={agent ? `/providers/${agent.provider}.svg` : undefined}
+      src={
+        agent
+          ? agent.provider === 'a2a'
+            ? '/icons/main-Group2.svg'
+            : `/providers/${agent.provider}.svg`
+          : undefined
+      }
       alt={agent ? `${agent.cli}头像` : undefined}
       sx={{
         width: size,

@@ -9,11 +9,45 @@ import type {
   TaskStatus,
 } from '../types'
 import { seed } from './seed'
+import { demoMode, hubService } from './hubService'
 import { createSpecPhases } from './spec'
 import { agentConfigService } from './agentConfigService'
 
 // Replace this adapter with HTTP/WebSocket calls when a backend is available.
-let data: AppData = structuredClone(seed)
+let data: AppData = demoMode
+  ? structuredClone(seed)
+  : {
+      workspace: { id: 'local', name: '本地工作空间', projectIds: [] },
+      projects: [],
+      requirements: [],
+      agents: [],
+      tasks: [],
+      messages: [],
+      sessions: [],
+      agentLoading: true,
+    }
+let agentRefresh: Promise<void> | undefined
+async function refreshAgents() {
+  if (demoMode) return
+  if (agentRefresh) return agentRefresh
+  agentRefresh = (async () => {
+    try {
+      data.agents = await hubService.agents()
+      data.agentError = undefined
+    } catch (error) {
+      data.agentError = error instanceof Error ? error.message : '无法连接 Hub'
+      data.agents = data.agents.map((agent) => ({ ...agent, online: false }))
+    } finally {
+      data.agentLoading = false
+      publish()
+    }
+  })()
+  try {
+    await agentRefresh
+  } finally {
+    agentRefresh = undefined
+  }
+}
 const subscribers = new Set<(data: AppData) => void>()
 const time = () => new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
 function publish() {
@@ -23,12 +57,20 @@ export function taskHasActiveAgent(task: Task) {
   return task.execution === 'executing' || task.execution === 'waiting'
 }
 export const reinService = {
+  refreshAgents,
   async getData() {
+    await refreshAgents()
     return structuredClone(data)
   },
   subscribe(fn: (value: AppData) => void) {
     subscribers.add(fn)
+    const timer = demoMode
+      ? undefined
+      : window.setInterval(() => {
+          void refreshAgents()
+        }, 2000)
     return () => {
+      window.clearInterval(timer)
       subscribers.delete(fn)
     }
   },
@@ -38,6 +80,7 @@ export const reinService = {
     return { name: 'Haibin', mode: 'demo' as const }
   },
   async sendMessage(scopeId: string, content: string) {
+    if (!demoMode) throw new Error('请从左侧 Agent 列表选择已注册的 Agent 开始对话。')
     const message = {
       id: crypto.randomUUID(),
       scopeId,
@@ -228,7 +271,7 @@ export const reinService = {
       name: config.basic.name,
       description: config.basic.description,
       provider: config.basic.provider,
-      cli: { claude: 'Claude Code', codex: 'Codex', pi: 'Pi' }[config.basic.provider],
+      cli: { claude: 'Claude Code', codex: 'Codex', pi: 'Pi', a2a: 'A2A' }[config.basic.provider],
       role: existing?.role ?? '助手',
       color: existing?.color ?? '#0866ff',
       online: existing?.online ?? false,
@@ -256,13 +299,15 @@ export const reinService = {
     publish()
   },
 }
-export const defaultScope: ChatScope = {
-  id: 'gateway',
-  title: '网关稳定性',
-  label: '当前需求',
-  projectId: 'gatewaykit',
-  requirementId: 'gateway',
-}
+export const defaultScope: ChatScope = !demoMode
+  ? { id: 'workspace', title: '选择 Agent 开始对话', label: '工作空间' }
+  : {
+      id: 'gateway',
+      title: '网关稳定性',
+      label: '当前需求',
+      projectId: 'gatewaykit',
+      requirementId: 'gateway',
+    }
 export function tasksInScope(data: AppData, scope: ChatScope) {
   return data.tasks.filter(
     (t) =>
